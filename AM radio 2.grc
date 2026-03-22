@@ -87,7 +87,7 @@ blocks:
     readOnly: 'False'
     relBackgroundColor: black
     relFontColor: white
-    value: 846e3
+    value: 2355e3
   states:
     bus_sink: false
     bus_source: false
@@ -139,7 +139,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [272, 0.0]
+    coordinate: [280, -4.0]
     rotation: 0
     state: enabled
 - name: notch_freq_v
@@ -147,7 +147,7 @@ blocks:
   parameters:
     comment: ''
     gui_hint: ''
-    label: Notch Filter
+    label: Variable notch
     min_len: '200'
     orient: QtCore.Qt.Horizontal
     rangeType: int
@@ -298,169 +298,9 @@ blocks:
 - name: epy_block_5
   id: epy_block
   parameters:
-    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
-      \ GRC will instantiate the first class it finds\nto get ports and parameters\
-      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
-      \ them are required to have default values!\n\"\"\"\n\"\"\"\n\nimport numpy\
-      \ as np\nfrom gnuradio import gr\nimport pmt\nimport math\n\nclass cquam_decoder(gr.sync_block):\n\
-      \    def __init__(self, sample_rate=120000, notch_freq=9000.0, notch_q=30.0):\n\
-      \        gr.sync_block.__init__(self,\n            name=\"C-QUAM Decoder with\
-      \ IIR Notch\",\n            in_sig=[np.complex64],\n            out_sig=[np.float32,\
-      \ np.float32]\n        )\n        self.fs = float(sample_rate)\n        self.notch_freq\
-      \ = notch_freq\n        self.notch_q = notch_q\n        \n        # PLL Constants\
-      \ (Widened loop slightly for faster re-acquisition)\n        self.zeta = 0.707\
-      \ \n        self.omegaN = 100.0\n        self._update_gains()\n\n        # States\n\
-      \        self.phz = 0.0\n        self.omega2 = 0.0\n        self.cos_gamma =\
-      \ 1.0\n        self.mono_mode = False\n        \n        # IIR Notch States\
-      \ (Direct Form II)\n        self.v1_l, self.v2_l = 0.0, 0.0\n        self.v1_r,\
-      \ self.v2_r = 0.0, 0.0\n        self._update_notch_coeffs()\n\n        self.message_port_register_in(pmt.intern(\"\
-      mono\"))\n        self.set_msg_handler(pmt.intern(\"mono\"), self.handle_mono)\n\
-      \n    def _update_gains(self):\n        # Standard second-order loop gains\n\
-      \        T = 1.0 / self.fs\n        self.alpha = (2.0 * self.zeta * self.omegaN\
-      \ * T) / (1.0 + 2.0 * self.zeta * self.omegaN * T + (self.omegaN * T)**2)\n\
-      \        self.beta = ( (self.omegaN * T)**2 ) / (1.0 + 2.0 * self.zeta * self.omegaN\
-      \ * T + (self.omegaN * T)**2)\n\n    def _update_notch_coeffs(self):\n     \
-      \   # Calculate IIR Notch coefficients\n        w0 = 2.0 * math.pi * self.notch_freq\
-      \ / self.fs\n        bw = w0 / self.notch_q\n        alpha = math.sin(bw) /\
-      \ 2.0\n        cos0 = math.cos(w0)\n        \n        a0 = 1.0 + alpha\n   \
-      \     self.b0 = 1.0 / a0\n        self.b1 = (-2.0 * cos0) / a0\n        self.b2\
-      \ = 1.0 / a0\n        self.a1 = (-2.0 * cos0) / a0\n        self.a2 = (1.0 -\
-      \ alpha) / a0\n\n    def handle_mono(self, msg):\n        self.mono_mode = bool(pmt.to_long(msg))\n\
-      \n    def work(self, input_items, output_items):\n        inp, L, R = input_items[0],\
-      \ output_items[0], output_items[1]\n        \n        # Sync local variables\
-      \ for speed\n        phz, omega2, cos_gamma = self.phz, self.omega2, self.cos_gamma\n\
-      \        b0, b1, b2, a1, a2 = self.b0, self.b1, self.b2, self.a1, self.a2\n\
-      \        \n        for i in range(len(inp)):\n            # 1. VCO & Mix to\
-      \ Baseband\n            vco = math.cos(phz) - 1j * math.sin(phz)\n         \
-      \   baseband = inp[i] * vco\n            I, Q = baseband.real, baseband.imag\n\
-      \            \n            # 2. Envelope & Normalization\n            env =\
-      \ math.sqrt(I*I + Q*Q) + 1e-9\n            \n            # 3. PLL Phase Detector\
-      \ (Normalize to prevent lock loss on fades)\n            det = Q / env \n  \
-      \          \n            # 4. Loop Filter\n            omega2 += self.beta *\
-      \ det\n            phz += self.alpha * det + omega2\n            phz %= (2.0\
-      \ * math.pi)\n\n            # 5. C-QUAM Decoding Logic\n            # cos_gamma\
-      \ tracks the average I/env to correct for C-QUAM non-linearity\n           \
-      \ cos_gamma += 0.005 * ((I / env) - cos_gamma)\n            \n            #\
-      \ Matrixing\n            LpR = (env * cos_gamma) - 1.0  # Sum\n            LmR\
-      \ = Q / cos_gamma            # Difference (scaled for centering)\n\n       \
-      \     l_raw = 0.5 * (LpR + LmR)\n            r_raw = 0.5 * (LpR - LmR)\n\n \
-      \           # 6. Apply IIR Notch to L and R channels\n            # Left Channel\
-      \ Filter\n            v_l = l_raw - a1 * self.v1_l - a2 * self.v2_l\n      \
-      \      l_out = b0 * v_l + b1 * self.v1_l + b2 * self.v2_l\n            self.v2_l,\
-      \ self.v1_l = self.v1_l, v_l\n            \n            # Right Channel Filter\n\
-      \            v_r = r_raw - a1 * self.v1_r - a2 * self.v2_r\n            r_out\
-      \ = b0 * v_r + b1 * self.v1_r + b2 * self.v2_r\n            self.v2_r, self.v1_r\
-      \ = self.v1_r, v_r\n\n            # 7. Output & Mono Mode\n            if self.mono_mode:\n\
-      \                mono = 0.5 * (l_out + r_out)\n                L[i] = R[i] =\
-      \ mono\n            else:\n                L[i], R[i] = l_out, r_out\n\n   \
-      \     self.phz, self.omega2, self.cos_gamma = phz, omega2, cos_gamma\n     \
-      \   return len(inp)\n\"\"\"\n\n\"\"\"\nimport numpy as np\nfrom gnuradio import\
-      \ gr\nfrom scipy import signal\n\nclass cquam_anti_warble(gr.sync_block):\n\
-      \    def __init__(self, sample_rate=120000, notch_freq=9000.0, bw=6000.0):\n\
-      \        gr.sync_block.__init__(self, name=\"Liquid_CQUAM\",\n            in_sig=[np.complex64],\
-      \ out_sig=[np.float32, np.float32])\n        self.fs = float(sample_rate)\n\
-      \        self.notch_f = notch_freq\n        self.bw = bw\n        \n       \
-      \ # PLL States - Low bandwidth for \"liquid\" sound\n        self.phase_base\
-      \ = 0.0\n        self.freq_acc = 0.0\n        self.alpha = 0.02  # Lower = smoother,\
-      \ higher = faster lock\n        \n        # Filter State Management\n      \
-      \  self.zi_l = self.zi_r = None\n        self._update_filters()\n\n    def _update_filters(self):\n\
-      \        b_n, a_n = signal.iirnotch(self.notch_f, 30.0, fs=self.fs)\n      \
-      \  b_l, a_l = signal.butter(4, self.bw, fs=self.fs, btype='low')\n        self.b,\
-      \ self.a = signal.convolve(b_n, b_l), signal.convolve(a_n, a_l)\n        \n\
-      \        # Vital: Do not reset zi if it already exists to avoid \"pops\"\n \
-      \       if self.zi_l is None:\n            self.zi_l = signal.lfilter_zi(self.b,\
-      \ self.a) * 0\n            self.zi_r = signal.lfilter_zi(self.b, self.a) * 0\n\
-      \n    def set_notch_freq(self, f): self.notch_f = f; self._update_filters()\n\
-      \    def set_bw(self, b): self.bw = b; self._update_filters()\n\n    def work(self,\
-      \ input_items, output_items):\n        in0 = input_items\n        n = len(in0)\n\
-      \        \n        # 1. ANALYSE: Find phase error once per block\n        vco_last\
-      \ = np.exp(-1j * self.phase_base)\n        error = np.angle(np.mean(in0 * vco_last)\
-      \ + 1e-9)\n        \n        # 2. SMOOTH: Linear Phase Interpolation (The Anti-Warble)\n\
-      \        # We calculate a frequency that will correct the error by the END of\
-      \ the block\n        target_freq = error / n \n        self.freq_acc = 0.95\
-      \ * self.freq_acc + 0.05 * target_freq # Flywheel damping\n        \n      \
-      \  # Create a smooth linear ramp from 0 to n*freq_acc\n        phase_ramp =\
-      \ self.phase_base + np.arange(n) * self.freq_acc\n        vco = np.exp(-1j *\
-      \ phase_ramp)\n        \n        # 3. DEMOD & MATRIX\n        bb = in0 * vco\n\
-      \        env = np.abs(in0)\n        LpR = env - np.mean(env) # Sum\n       \
-      \ LmR = bb.imag           # Difference\n        \n        # 4. FILTER\n    \
-      \    output_items[:], self.zi_l = signal.lfilter(self.b, self.a, 0.5*(LpR +\
-      \ LmR), zi=self.zi_l)\n        output_items[:], self.zi_r = signal.lfilter(self.b,\
-      \ self.a, 0.5*(LpR - LmR), zi=self.zi_r)\n        \n        # Update for next\
-      \ block\n        self.phase_base = (phase_ramp[-1] + self.freq_acc) % (2*np.pi)\n\
-      \        \n        return n\n\"\"\"\n\n\"\"\"\nimport numpy as np\nfrom gnuradio\
-      \ import gr\nimport pmt\nimport math\nfrom scipy import signal\n\nclass cquam_decoder(gr.sync_block):\n\
-      \    def __init__(self, sample_rate=120000, notch_freq=9000, notch_q=30.0, mono_mode=False):\n\
-      \        gr.sync_block.__init__(self,\n            name=\"C-QUAM Field Decoder\"\
-      ,\n            in_sig=[np.complex64],\n            out_sig=[np.float32, np.float32]\n\
-      \        )\n        self.fs = float(sample_rate)\n        self.notch_freq =\
-      \ notch_freq\n        self.notch_q = notch_q\n        self.mono_mode = mono_mode\n\
-      \        \n        #The update starts here\n        \n        # Initialize filter\
-      \ states (zi) to prevent clicks\n        self.b, self.a = signal.iirnotch(self.notch_freq,\
-      \ self.notch_q, self.fs)\n        self.zi_l = signal.lfilter_zi(self.b, self.a)\
-      \ * 0\n        self.zi_r = signal.lfilter_zi(self.b, self.a) * 0\n        \n\
-      \        # PLL & Correction\n        self.zeta = 0.707 \n        self.omegaN\
-      \ = 100.0\n        self._update_gains()\n\n        # States\n        self.phz,\
-      \ self.omega2, self.cos_gamma = 0.0, 0.0, 1.0\n        self.v1_l, self.v2_l\
-      \ = 0.0, 0.0\n        self.v1_r, self.v2_r = 0.0, 0.0\n        \n        # Monitor\
-      \ States (For LEDs)\n        self.lock_level = 0.0\n        self.pilot_mag =\
-      \ 0.0\n        \n        self._update_notch_coeffs()\n\n    def _update_gains(self):\n\
-      \        T = 1.0 / self.fs\n        self.alpha = (2.0 * self.zeta * self.omegaN\
-      \ * T) / (1.0 + 2.0 * self.zeta * self.omegaN * T + (self.omegaN * T)**2)\n\
-      \        self.beta = ((self.omegaN * T)**2) / (1.0 + 2.0 * self.zeta * self.omegaN\
-      \ * T + (self.omegaN * T)**2)\n        \n        \n\n    #def _update_notch_coeffs(self):\n\
-      \        #w0 = 2.0 * math.pi * self.notch_freq / self.fs\n        #bw = w0 /\
-      \ self.notch_q\n        #alpha = math.sin(bw) / 2.0\n        #cos0, a0 = math.cos(w0),\
-      \ 1.0 + alpha\n        #self.b0, self.b1, self.b2 = 1.0/a0, (-2.0*cos0)/a0,\
-      \ 1.0/a0\n        #self.a1, self.a2 = (-2.0*cos0)/a0, (1.0-alpha)/a0\n     \
-      \   \n        #the updated Code here that replaces the one above\n    def _update_notch_coeffs(self):\n\
-      \        #Calculates coefficients ONLY when a control changes.\n        self.b,\
-      \ self.a = signal.iirnotch(self.notch_freq, self.notch_q, self.fs)\n       \
-      \ # Note: We don't reset zi here to keep the audio smooth during the slide\n\
-      \n    # These callbacks fix the 'not responding' issue\n    def set_notch_freq(self,\
-      \ notch_freq):\n        if self.notch_freq != notch_freq:\n            self.notch_freq\
-      \ = notch_freq\n            self._update_notch_coeffs()\n\n    def set_notch_q(self,\
-      \ notch_q):\n        if self.notch_q != notch_q:\n            self.notch_q =\
-      \ notch_q\n            self._update_notch_coeffs()\n\n    def work(self, input_items,\
-      \ output_items):\n        in0 = input_items[0]\n        out_l = output_items[0]\n\
-      \        out_r = output_items[1]\n        # the updated code stops here\n\n\
-      \    # Command Interfaces for GRC\n    def set_mono_mode(self, mode): self.mono_mode\
-      \ = bool(mode)\n    def set_notch_freq(self, freq): self.notch_freq = freq;\
-      \ self._update_notch_coeffs()\n    def get_lock_status(self): return self.lock_level\n\
-      \    def get_pilot_status(self): return 1.0 if self.pilot_mag > 0.015 else 0.0\n\
-      \n    def work(self, input_items, output_items):\n        inp, L, R = input_items[0],\
-      \ output_items[0], output_items[1]\n        p_step = 2.0 * math.pi * 25.0 /\
-      \ self.fs\n        \n        # Fast local copies\n        phz, omega2, cos_gamma\
-      \ = self.phz, self.omega2, self.cos_gamma\n        \n        for i in range(len(inp)):\n\
-      \            vco = math.cos(phz) - 1j * math.sin(phz)\n            bb = inp[i]\
-      \ * vco\n            I, Q = bb.real, bb.imag\n            env = math.sqrt(I*I\
-      \ + Q*Q) + 1e-9\n            \n            # PLL\n            det = Q / env\
-      \ \n            omega2 += self.beta * det\n            phz = (phz + self.alpha\
-      \ * det + omega2) % (2.0 * math.pi)\n\n            # C-QUAM Logic\n        \
-      \    cos_gamma += 0.005 * ((I / env) - cos_gamma)\n            LpR = (env *\
-      \ cos_gamma) - 1.0\n            LmR = Q / cos_gamma\n\n            # Monitor\
-      \ Logic (Lock & 25Hz Pilot)\n            self.lock_level += 0.001 * (max(0,\
-      \ I/env) - self.lock_level)\n            self.pilot_mag += 0.0002 * (abs(LmR\
-      \ * (math.sin(phz*0.0002))) - self.pilot_mag) # simplified corr\n\n        \
-      \    l_raw, r_raw = 0.5*(LpR + LmR), 0.5*(LpR - LmR)\n            \n       \
-      \     \n            #This is the old Notch filter loop\n\n            ## Notch\
-      \ Filtering\n            #v_l = l_raw - self.a1*self.v1_l - self.a2*self.v2_l\n\
-      \            #l_out = self.b0*v_l + self.b1*self.v1_l + self.b2*self.v2_l\n\
-      \            #self.v1_l, self.v2_l = v_l, self.v1_l\n            \n        \
-      \    #v_r = r_raw - self.a1*self.v1_r - self.a2*self.v2_r\n            #r_out\
-      \ = self.b0*v_r + self.b1*self.v1_r + self.b2*self.v2_r\n            #self.v1_r,\
-      \ self.v2_r = v_r, self.v1_r\n            \n            # This is the new Notch\
-      \ filter loop replacement\n            # Replace your manual notch loop with\
-      \ these two lines:\n            out_l[:], self.zi_l = signal.lfilter(self.b,\
-      \ self.a, l_raw, zi=self.zi_l) # l_raw was replaced with raw_l\n           \
-      \ out_r[:], self.zi_r = signal.lfilter(self.b, self.a, r_raw, zi=self.zi_r)\
-      \ # r_raw was replaced with r_raw\n            \n            return len(in0)\n\
-      \n            if self.mono_mode:\n                m = 0.5 * (l_out + r_out)\n\
-      \                L[i] = R[i] = m\n            else:\n                L[i], R[i]\
-      \ = l_out, r_out\n\n        self.phz, self.omega2, self.cos_gamma = phz, omega2,\
-      \ cos_gamma\n        return len(inp)\n\n\"\"\"\n\nimport numpy as np\nfrom gnuradio\
-      \ import gr\nimport math\nfrom scipy import signal\n\nclass cquam_decoder(gr.sync_block):\n\
-      \    def __init__(self, sample_rate=120000, notch_freq=9000, notch_q=30.0, mono_mode=False):\n\
+    _source_code: "import numpy as np\nfrom gnuradio import gr\nimport math\nimport\
+      \ pmt\nfrom scipy import signal\n\nclass cquam_decoder(gr.sync_block):\n   \
+      \ def __init__(self, sample_rate=120000, notch_freq=9000, notch_q=30.0, mono_mode=False):\n\
       \        gr.sync_block.__init__(self,\n            name=\"C-QUAM Field Decoder\"\
       ,\n            in_sig=[np.complex64],\n            out_sig=[np.float32, np.float32]\n\
       \        )\n        self.fs = float(sample_rate)\n        self.notch_freq =\
@@ -470,43 +310,52 @@ blocks:
       \ = 0.0, 0.0, 1.0\n        self.lock_level, self.pilot_mag = 0.0, 0.0\n    \
       \    \n        # Initialize filter coefficients and states\n        self._update_notch_coeffs()\n\
       \        self.zi_l = signal.lfilter_zi(self.b, self.a) * 0\n        self.zi_r\
-      \ = signal.lfilter_zi(self.b, self.a) * 0\n\n    def _update_gains(self):\n\
-      \        T = 1.0 / self.fs\n        denom = 1.0 + 2.0 * self.zeta * self.omegaN\
-      \ * T + (self.omegaN * T)**2\n        self.alpha = (2.0 * self.zeta * self.omegaN\
-      \ * T) / denom\n        self.beta = ((self.omegaN * T)**2) / denom\n\n    def\
-      \ _update_notch_coeffs(self):\n        # Optimized Scipy notch\n        self.b,\
-      \ self.a = signal.iirnotch(self.notch_freq, self.notch_q, self.fs)\n\n    def\
-      \ set_notch_freq(self, notch_freq):\n        if self.notch_freq != notch_freq:\n\
-      \            self.notch_freq = notch_freq\n            self._update_notch_coeffs()\n\
+      \ = signal.lfilter_zi(self.b, self.a) * 0\n        \n        # Register message\
+      \ port for notch frequency updates\n        self.message_port_register_in(pmt.intern(\"\
+      notch_freq\"))\n        self.set_msg_handler(pmt.intern(\"notch_freq\"), self.handle_notch_freq)\n\
+      \n    def _update_gains(self):\n        T = 1.0 / self.fs\n        denom = 1.0\
+      \ + 2.0 * self.zeta * self.omegaN * T + (self.omegaN * T)**2\n        self.alpha\
+      \ = (2.0 * self.zeta * self.omegaN * T) / denom\n        self.beta = ((self.omegaN\
+      \ * T)**2) / denom\n\n    def _update_notch_coeffs(self):\n        # Optimized\
+      \ Scipy notch\n        self.b, self.a = signal.iirnotch(self.notch_freq, self.notch_q,\
+      \ self.fs)\n\n    def set_notch_freq(self, notch_freq):\n        if self.notch_freq\
+      \ != notch_freq:\n            self.notch_freq = notch_freq\n            print(f\"\
+      DEBUG: Notch frequency updated to {self.notch_freq} Hz\")\n            self._update_notch_coeffs()\n\
       \n    def set_notch_q(self, notch_q):\n        if self.notch_q != notch_q:\n\
       \            self.notch_q = notch_q\n            self._update_notch_coeffs()\n\
-      \n    def set_mono_mode(self, mode): self.mono_mode = bool(mode)\n    def get_lock_status(self):\
-      \ return self.lock_level\n    def get_pilot_status(self): return 1.0 if self.pilot_mag\
-      \ > 0.015 else 0.0\n\n    def work(self, input_items, output_items):\n     \
-      \   inp = input_items[0]\n        L_out = output_items[0]\n        R_out = output_items[1]\n\
-      \        n = len(inp)\n\n        # Buffers to hold raw demodulated audio for\
-      \ vector filtering\n        raw_l = np.zeros(n, dtype=np.float32)\n        raw_r\
-      \ = np.zeros(n, dtype=np.float32)\n        \n        phz, omega2, cos_gamma\
-      \ = self.phz, self.omega2, self.cos_gamma\n        \n        # 1. PER-SAMPLE\
-      \ DEMODULATION & MONITORING\n        for i in range(n):\n            vco = math.cos(phz)\
-      \ - 1j * math.sin(phz)\n            bb = inp[i] * vco\n            I, Q = bb.real,\
-      \ bb.imag\n            env = math.sqrt(I*I + Q*Q) + 1e-9\n            \n   \
-      \         # PLL\n            det = Q / env \n            omega2 += self.beta\
-      \ * det\n            phz = (phz + self.alpha * det + omega2) % (2.0 * math.pi)\n\
-      \n            # C-QUAM Logic\n            cos_gamma += 0.005 * ((I / env) -\
-      \ cos_gamma)\n            LpR = (env * cos_gamma) - 1.0\n            LmR = Q\
-      \ / cos_gamma\n\n            # Monitor Logic (Lock & 25Hz Pilot)\n         \
-      \   self.lock_level += 0.001 * (max(0, I/env) - self.lock_level)\n         \
-      \   # Pilot check (using LmR for stereo difference)\n            self.pilot_mag\
-      \ += 0.0002 * (abs(LmR * (math.sin(phz*0.0002))) - self.pilot_mag) #this has\
-      \ beeh taken out to match suggested code - self.pilot_mag)\n\n            raw_l[i],\
-      \ raw_r[i] = 0.5*(LpR + LmR), 0.5*(LpR - LmR)\n\n        self.phz, self.omega2,\
-      \ self.cos_gamma = phz, omega2, cos_gamma\n\n        # 2. VECTORIZED NOTCH FILTERING\
-      \ (OUTSIDE THE LOOP)\n        # This is where the speed comes from!\n      \
-      \  L_out[:], self.zi_l = signal.lfilter(self.b, self.a, raw_l, zi=self.zi_l)\n\
-      \        R_out[:], self.zi_r = signal.lfilter(self.b, self.a, raw_r, zi=self.zi_r)\n\
-      \n        if self.mono_mode:\n            m = 0.5 * (L_out + R_out)\n      \
-      \      L_out[:], R_out[:] = m, m\n\n        return n\n"
+      \n    def set_mono_mode(self, mode):\n        self.mono_mode = bool(mode)\n\n\
+      \    def handle_notch_freq(self, msg):\n        \"\"\"Handle notch frequency\
+      \ changes from GUI variable\"\"\"\n        try:\n            if isinstance(msg,\
+      \ pmt.pmt_object):\n                freq_val = pmt.to_float(msg)\n         \
+      \   else:\n                freq_val = float(msg)\n            \n           \
+      \ if self.notch_freq != freq_val:\n                self.notch_freq = freq_val\n\
+      \                print(f\"DEBUG: Notch frequency message received: {self.notch_freq}\
+      \ Hz\")\n                self._update_notch_coeffs()\n        except Exception\
+      \ as e:\n            print(f\"Error handling notch_freq message: {e}\")\n\n\
+      \    def get_lock_status(self):\n        return self.lock_level\n\n    def get_pilot_status(self):\n\
+      \        return 1.0 if self.pilot_mag > 0.015 else 0.0\n\n    def work(self,\
+      \ input_items, output_items):\n        inp = input_items[0]\n        L_out =\
+      \ output_items[0]\n        R_out = output_items[1]\n        n = len(inp)\n\n\
+      \        # Buffers to hold raw demodulated audio for vector filtering\n    \
+      \    raw_l = np.zeros(n, dtype=np.float32)\n        raw_r = np.zeros(n, dtype=np.float32)\n\
+      \        \n        phz, omega2, cos_gamma = self.phz, self.omega2, self.cos_gamma\n\
+      \        \n        # 1. PER-SAMPLE DEMODULATION & MONITORING\n        for i\
+      \ in range(n):\n            vco = math.cos(phz) - 1j * math.sin(phz)\n     \
+      \       bb = inp[i] * vco\n            I, Q = bb.real, bb.imag\n           \
+      \ env = math.sqrt(I*I + Q*Q) + 1e-9\n            \n            # PLL\n     \
+      \       det = Q / env \n            omega2 += self.beta * det\n            phz\
+      \ = (phz + self.alpha * det + omega2) % (2.0 * math.pi)\n\n            # C-QUAM\
+      \ Logic\n            cos_gamma += 0.005 * ((I / env) - cos_gamma)\n        \
+      \    LpR = (env * cos_gamma) - 1.0\n            LmR = Q / cos_gamma\n\n    \
+      \        # Monitor Logic (Lock & 25Hz Pilot)\n            self.lock_level +=\
+      \ 0.001 * (max(0, I/env) - self.lock_level)\n            self.pilot_mag += 0.0002\
+      \ * (abs(LmR) - self.pilot_mag)\n\n            raw_l[i], raw_r[i] = 0.5*(LpR\
+      \ + LmR), 0.5*(LpR - LmR)\n\n        self.phz, self.omega2, self.cos_gamma =\
+      \ phz, omega2, cos_gamma\n\n        # 2. VECTORIZED NOTCH FILTERING (OUTSIDE\
+      \ THE LOOP)\n        L_out[:], self.zi_l = signal.lfilter(self.b, self.a, raw_l,\
+      \ zi=self.zi_l)\n        R_out[:], self.zi_r = signal.lfilter(self.b, self.a,\
+      \ raw_r, zi=self.zi_r)\n\n        if self.mono_mode:\n            m = 0.5 *\
+      \ (L_out + R_out)\n            L_out[:], R_out[:] = m, m\n\n        return n\n"
     affinity: ''
     alias: ''
     comment: ''
@@ -519,12 +368,12 @@ blocks:
   states:
     _io_cache: ('C-QUAM Field Decoder', 'cquam_decoder', [('sample_rate', '120000'),
       ('notch_freq', '9000'), ('notch_q', '30.0'), ('mono_mode', 'False')], [('0',
-      'complex', 1)], [('0', 'float', 1), ('1', 'float', 1)], '', ['mono_mode', 'notch_freq',
-      'notch_q'])
+      'complex', 1), ('notch_freq', 'message', 1)], [('0', 'float', 1), ('1', 'float',
+      1)], '', ['mono_mode', 'notch_freq', 'notch_q'])
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [712.0, 48]
+    coordinate: [728.0, 0]
     rotation: 90
     state: enabled
 - name: freq_xlating_fft_filter_ccc_0
@@ -613,7 +462,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [432, 144.0]
+    coordinate: [488, 144.0]
     rotation: 0
     state: enabled
 - name: rational_resampler_xxx_0_0_0
