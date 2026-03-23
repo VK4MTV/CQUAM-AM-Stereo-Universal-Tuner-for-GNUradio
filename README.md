@@ -9,3 +9,6 @@ beta testing needs to be done to broaden support for other SDR's, right now it i
 the aim on the final is to release a standalone SDR based receiver
 feel free to develop your version from this receiver, I want to help make CQUAM mainstream, you can use a genuine Motorola chip in your design, but SDR is far more maleable, offering flexibility for more features, such as Stereo sound stage stabilisation, which is considered later, for now this radio has been developed to stay within the constraints of a Rasberry Pi5, the Notch filtering feature has increased processor demand, a Pi5 will need to be running at 2.4GHz to run this radio smoothly.
 Have a play and have fun with it, cheers, VK4MTV aka Christopher O'Reilly.
+
+
+23/03/2026 UPDATE: an issue was found with the pilot tone detecor, Fixed!
