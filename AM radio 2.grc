@@ -87,7 +87,7 @@ blocks:
     readOnly: 'False'
     relBackgroundColor: black
     relFontColor: white
-    value: 2355e3
+    value: 7390e3
   states:
     bus_sink: false
     bus_source: false
@@ -112,36 +112,6 @@ blocks:
     coordinate: [152, 0.0]
     rotation: 0
     state: enabled
-- name: notch_freq
-  id: variable_qtgui_chooser
-  parameters:
-    comment: ''
-    gui_hint: ''
-    label: Notch_freq
-    label0: SW BC 5KHz
-    label1: AM BC 9KHz
-    label2: AM BC USA 10KHz
-    label3: Variable
-    label4: ''
-    labels: '["5K SWBC", "9 AMBC", "10K AMBC USA"]'
-    num_opts: '4'
-    option0: '5000'
-    option1: '9000'
-    option2: '10000'
-    option3: notch_freq_v
-    option4: '4'
-    options: '[5000, 9000, 10000]'
-    orient: Qt.QHBoxLayout
-    type: int
-    value: '9000'
-    widget: radio_buttons
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [280, -4.0]
-    rotation: 0
-    state: enabled
 - name: notch_freq_v
   id: variable_qtgui_range
   parameters:
@@ -160,7 +130,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [448, 8.0]
+    coordinate: [360, 0.0]
     rotation: 0
     state: enabled
 - name: pilot_val
@@ -305,22 +275,23 @@ blocks:
       ,\n            in_sig=[np.complex64],\n            out_sig=[np.float32, np.float32]\n\
       \        )\n        self.fs = float(sample_rate)\n        self.notch_freq =\
       \ notch_freq\n        self.notch_q = notch_q\n        self.mono_mode = mono_mode\n\
-      \        \n        # PLL & States\n        self.zeta, self.omegaN = 0.707, 100.0\n\
-      \        self._update_gains()\n        self.phz, self.omega2, self.cos_gamma\
-      \ = 0.0, 0.0, 1.0\n        self.lock_level, self.pilot_mag = 0.0, 0.0\n    \
-      \    \n        # Initialize filter coefficients and states\n        self._update_notch_coeffs()\n\
-      \        self.zi_l = signal.lfilter_zi(self.b, self.a) * 0\n        self.zi_r\
-      \ = signal.lfilter_zi(self.b, self.a) * 0\n        \n        # Register message\
-      \ port for notch frequency updates\n        self.message_port_register_in(pmt.intern(\"\
-      notch_freq\"))\n        self.set_msg_handler(pmt.intern(\"notch_freq\"), self.handle_notch_freq)\n\
-      \n    def _update_gains(self):\n        T = 1.0 / self.fs\n        denom = 1.0\
-      \ + 2.0 * self.zeta * self.omegaN * T + (self.omegaN * T)**2\n        self.alpha\
-      \ = (2.0 * self.zeta * self.omegaN * T) / denom\n        self.beta = ((self.omegaN\
-      \ * T)**2) / denom\n\n    def _update_notch_coeffs(self):\n        # Optimized\
-      \ Scipy notch\n        self.b, self.a = signal.iirnotch(self.notch_freq, self.notch_q,\
-      \ self.fs)\n\n    def set_notch_freq(self, notch_freq):\n        if self.notch_freq\
-      \ != notch_freq:\n            self.notch_freq = notch_freq\n            print(f\"\
-      DEBUG: Notch frequency updated to {self.notch_freq} Hz\")\n            self._update_notch_coeffs()\n\
+      \        \n        \n        # PLL & States\n        self.zeta, self.omegaN\
+      \ = 0.707, 100.0\n        self._update_gains()\n        self.phz, self.omega2,\
+      \ self.cos_gamma = 0.0, 0.0, 1.0\n        self.lock_level, self.pilot_mag =\
+      \ 0.0, 0.0\n        \n        # Initialize filter coefficients and states\n\
+      \        self._update_notch_coeffs()\n        self.zi_l = signal.lfilter_zi(self.b,\
+      \ self.a) * 0\n        self.zi_r = signal.lfilter_zi(self.b, self.a) * 0\n \
+      \       \n        # Register message port for notch frequency updates\n    \
+      \    self.message_port_register_in(pmt.intern(\"notch_freq\"))\n        self.set_msg_handler(pmt.intern(\"\
+      notch_freq\"), self.handle_notch_freq)\n\n    def _update_gains(self):\n   \
+      \     T = 1.0 / self.fs\n        denom = 1.0 + 2.0 * self.zeta * self.omegaN\
+      \ * T + (self.omegaN * T)**2\n        self.alpha = (2.0 * self.zeta * self.omegaN\
+      \ * T) / denom\n        self.beta = ((self.omegaN * T)**2) / denom\n\n    def\
+      \ _update_notch_coeffs(self):\n        # Optimized Scipy notch\n        self.b,\
+      \ self.a = signal.iirnotch(self.notch_freq, self.notch_q, self.fs)\n\n    def\
+      \ set_notch_freq(self, notch_freq):\n        if self.notch_freq != notch_freq:\n\
+      \            self.notch_freq = notch_freq\n            print(f\"DEBUG: Notch\
+      \ frequency updated to {self.notch_freq} Hz\")\n            self._update_notch_coeffs()\n\
       \n    def set_notch_q(self, notch_q):\n        if self.notch_q != notch_q:\n\
       \            self.notch_q = notch_q\n            self._update_notch_coeffs()\n\
       \n    def set_mono_mode(self, mode):\n        self.mono_mode = bool(mode)\n\n\
@@ -362,8 +333,8 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     mono_mode: mono_mode
-    notch_freq: notch_freq
-    notch_q: '1'
+    notch_freq: '9000'
+    notch_q: '30'
     sample_rate: '120000'
   states:
     _io_cache: ('C-QUAM Field Decoder', 'cquam_decoder', [('sample_rate', '120000'),
@@ -442,6 +413,34 @@ blocks:
     bus_structure: null
     coordinate: [692.0, 248]
     rotation: 90
+    state: enabled
+- name: notch_controller
+  id: epy_block
+  parameters:
+    _source_code: "import numpy as np\nfrom gnuradio import gr\nimport pmt\n\nclass\
+      \ notch_frequency_controller(gr.basic_block):\n    def __init__(self, notch_freq_v=\
+      \ 9000):\n        gr.basic_block.__init__(self,\n            name=\"Notch Frequency\
+      \ Controller\",\n            in_sig=None,\n            out_sig=None\n      \
+      \  )\n        self.message_port_register_out(pmt.intern(\"notch_freq\"))\n \
+      \       self.current_freq = (notch_freq_v)\n    \n    def set_freq(self, freq):\n\
+      \        \"\"\"Called when slider or chooser changes\"\"\"\n        self.current_freq\
+      \ = int(notch_freq_v)\n        self.message_port_pub(pmt.intern(\"notch_freq\"\
+      ), pmt.from_long(self.current_freq))\n    \n    def work(self, input_items,\
+      \ output_items):\n        return -1  # Not processing samples\n"
+    affinity: ''
+    alias: ''
+    comment: Controller for notch frequency
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    notch_freq_v: notch_freq_v
+  states:
+    _io_cache: ('Notch Frequency Controller', 'notch_frequency_controller', [('notch_freq_v',
+      '9000')], [], [('notch_freq', 'message', 1)], '', [])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [496, 40.0]
+    rotation: 0
     state: enabled
 - name: pilot_led
   id: qtgui_ledindicator
@@ -908,6 +907,7 @@ connections:
 - [freq_xlating_fft_filter_ccc_0, '0', rational_resampler_xxx_0_0_0, '0']
 - [low_pass_filter_0, '0', epy_block_0, '0']
 - [low_pass_filter_0, '0', epy_block_5, '0']
+- [notch_controller, notch_freq, epy_block_5, notch_freq]
 - [rational_resampler_xxx_0_0_0, '0', satellites_rms_agc_0, '0']
 - [rational_resampler_xxx_0_0_0_0, '0', audio_sink_0, '0']
 - [rational_resampler_xxx_0_0_0_0_0, '0', audio_sink_0, '1']
