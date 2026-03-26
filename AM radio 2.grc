@@ -1,45 +1,960 @@
-# Updated AM Radio Configuration
+options:
+  parameters:
+    author: Christopher O'Reilly
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: This is a basic AM radio with C-QUAM reception and notch filtering
+    copyright: Tropical Radio Network
+    description: AM Radio with C-QUAM reception
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: AMradio
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: AM Stereo radio
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
 
-# New notch_mode variable
-notch_mode = "manual"  # or "automatic"
+blocks:
+- name: Stereo_Lock
+  id: variable_function_probe
+  parameters:
+    block_id: epy_block_5
+    comment: ''
+    function_args: ''
+    function_name: get_lock_status
+    poll_rate: '10'
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [320, 232.0]
+    rotation: 0
+    state: enabled
+- name: audio_bw
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: ''
+    label: Audio bandwidth
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '2500'
+    step: '1'
+    stop: '15000'
+    value: '10000'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 104.0]
+    rotation: 0
+    state: enabled
+- name: freq
+  id: qtgui_msgdigitalnumbercontrol
+  parameters:
+    ThousandsSeparator: ','
+    affinity: ''
+    alias: ''
+    comment: ''
+    gui_hint: ''
+    lbl: Frequency
+    maxFreqHz: 30000e3
+    maxoutbuf: '0'
+    minFreqHz: 500e3
+    minoutbuf: '0'
+    outputmsgname: freq
+    readOnly: 'False'
+    relBackgroundColor: black
+    relFontColor: white
+    value: 7390e3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [176, 120.0]
+    rotation: 0
+    state: enabled
+- name: mono_mode
+  id: variable_qtgui_check_box
+  parameters:
+    comment: ''
+    'false': '1'
+    gui_hint: ''
+    label: STEREO MODE
+    'true': '0'
+    type: int
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [152, 0.0]
+    rotation: 0
+    state: enabled
+- name: notch_freq_v
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: ''
+    label: Variable notch
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: int
+    start: '2000'
+    step: '1'
+    stop: '15000'
+    value: '5000'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [280, 0.0]
+    rotation: 0
+    state: enabled
+- name: notch_mode
+  id: variable_qtgui_chooser
+  parameters:
+    comment: ''
+    gui_hint: ''
+    label: Notch filter
+    label0: 5KHz (SW)
+    label1: 9KHz (Global)
+    label2: 10KHz (USA)
+    label3: Variable
+    label4: ''
+    labels: '[]'
+    num_opts: '4'
+    option0: '0'
+    option1: '1'
+    option2: '2'
+    option3: '3'
+    option4: '4'
+    options: '[0, 1, 2]'
+    orient: Qt.QHBoxLayout
+    type: int
+    value: '2'
+    widget: radio_buttons
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [400, -4.0]
+    rotation: 0
+    state: enabled
+- name: pilot_val
+  id: variable_function_probe
+  parameters:
+    block_id: epy_block_5
+    comment: ''
+    function_args: ''
+    function_name: get_pilot_status
+    poll_rate: '10'
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [160, 232.0]
+    rotation: 0
+    state: enabled
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: 1000e3
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 328.0]
+    rotation: 0
+    state: enabled
+- name: audio_sink_0
+  id: audio_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    device_name: ''
+    num_inputs: '2'
+    ok_to_block: 'True'
+    samp_rate: '48000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [896.0, 336]
+    rotation: 270
+    state: enabled
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "import numpy as np\nfrom gnuradio import gr\nimport pmt\nimport\
+      \ math\nfrom scipy import signal  # <--- THIS FIXES THE \"NOT DEFINED\" ERROR\n\
+      \nclass cquam_decoder(gr.sync_block):\n    def __init__(self, sample_rate=120000,\
+      \ notch_freq=9000, notch_q=30.0, mono_mode=False):\n        gr.sync_block.__init__(self,\n\
+      \            name=\"C-QUAM Field Decoder\",\n            in_sig=[np.complex64],\n\
+      \            out_sig=[np.float32, np.float32]\n        )\n        self.fs =\
+      \ float(sample_rate)\n        self.notch_freq = notch_freq\n        self.notch_q\
+      \ = notch_q\n        self.mono_mode = mono_mode\n        \n        # PLL & Correction\n\
+      \        self.zeta = 0.707 \n        self.omegaN = 100.0\n        self._update_gains()\n\
+      \n        # States\n        self.phz, self.omega2, self.cos_gamma = 0.0, 0.0,\
+      \ 1.0\n        \n        # Initialize filter states (zi) to prevent clicks\n\
+      \        self.b, self.a = signal.iirnotch(self.notch_freq, self.notch_q, self.fs)\n\
+      \        self.zi_l = signal.lfilter_zi(self.b, self.a) * 0\n        self.zi_r\
+      \ = signal.lfilter_zi(self.b, self.a) * 0\n        \n        # Monitor States\n\
+      \        self.lock_level = 0.0\n        self.pilot_mag = 0.0\n\n    def _update_gains(self):\n\
+      \        T = 1.0 / self.fs\n        self.alpha = (2.0 * self.zeta * self.omegaN\
+      \ * T) / (1.0 + 2.0 * self.zeta * self.omegaN * T + (self.omegaN * T)**2)\n\
+      \        self.beta = ((self.omegaN * T)**2) / (1.0 + 2.0 * self.zeta * self.omegaN\
+      \ * T + (self.omegaN * T)**2)\n        \n        ############################################################################################################\n\
+      \        #The code of interest below, I have entered in both of the GUI blocks\
+      \ where the ID field contains notch_freq, \n        #I enabled one and disabled\
+      \ the other to test each, \n        #neither the select or the slider works,\
+      \ \n        #still is stuck on the default setting, I can change the default\
+      \ to 5KHz on the shortwave station, then it works,\n        #Same thing if I\
+      \ tune into an AM broadcast station when the default is at 5KHz, theres the\
+      \ whistle,\n        #vary or select 9KHz, whistle is still there, close program,\
+      \ fill default with 9KHz, then it works\n        #########################################################################################################\n\
+      \n    def _update_notch_coeffs(self):\n        \"\"\"Calculates coefficients\
+      \ only when a control changes.\"\"\"\n        self.b, self.a = signal.iirnotch(self.notch_freq,\
+      \ self.notch_q, self.fs) #this matches up exactly so I have not changed it\n\
+      \n    # Callbacks for GRC\n    #def set_notch_freq(self, notch_freq):      \
+      \    #(self, freq): \n        ##self.notch_freq = freq #this is the previous\
+      \ that has been replaces with the line below\n        #self.notch_freq = notch_freq\
+      \ #this is the replacement under suggestion\n        #self._update_notch_coeffs()\n\
+      \        \n    def set_notch_freq(self, notch_freq):\n        print(f\"DEBUG:\
+      \ Notch updating to {notch_freq} Hz\") # <--- ADD THIS\n        #print(notch_freq)\n\
+      \        self.notch_freq = notch_freq\n        self._update_notch_coeffs()\n\
+      \n\n    def set_notch_q(self, notch_q):         #(self, q):\n        #self.notch_q\
+      \ = q   #this is the previous that has been replaces with the line below\n \
+      \       self.notch_q = notch_q #this is the replacement under suggestion\n \
+      \       self._update_notch_coeffs()\n        \n        ############################\n\
+      \        #End of the code of interest\n        ############################\n\
+      \        \n        \n\n    def set_mono_mode(self, mode): self.mono_mode = bool(mode)\n\
+      \n    def work(self, input_items, output_items):\n        inp, L, R = input_items[0],\
+      \ output_items[0], output_items[1]\n        n = len(inp)\n        \n       \
+      \ # Temporary arrays to hold raw audio before the notch\n        raw_l = np.zeros(n,\
+      \ dtype=np.float32)\n        raw_r = np.zeros(n, dtype=np.float32)\n       \
+      \ \n        # Fast local copies\n        phz, omega2, cos_gamma = self.phz,\
+      \ self.omega2, self.cos_gamma\n        \n        # 1. THE DEMODULATION LOOP\
+      \ (Keep your original logic)\n        for i in range(n):\n            vco =\
+      \ math.cos(phz) - 1j * math.sin(phz)\n            bb = inp[i] * vco\n      \
+      \      I, Q = bb.real, bb.imag\n            env = math.sqrt(I*I + Q*Q) + 1e-9\n\
+      \            \n            # PLL\n            det = Q / env \n            omega2\
+      \ += self.beta * det\n            phz = (phz + self.alpha * det + omega2) %\
+      \ (2.0 * math.pi)\n\n            # C-QUAM Logic\n            cos_gamma += 0.005\
+      \ * ((I / env) - cos_gamma)\n            LpR = (env * cos_gamma) - 1.0\n   \
+      \         LmR = Q / cos_gamma\n\n            raw_l[i], raw_r[i] = 0.5*(LpR +\
+      \ LmR), 0.5*(LpR - LmR)\n\n        # Update persistent states\n        self.phz,\
+      \ self.omega2, self.cos_gamma = phz, omega2, cos_gamma\n\n        # 2. EFFICIENT\
+      \ NOTCH FILTERING (Run once per block, outside the loop)\n        L[:], self.zi_l\
+      \ = signal.lfilter(self.b, self.a, raw_l, zi=self.zi_l)\n        R[:], self.zi_r\
+      \ = signal.lfilter(self.b, self.a, raw_r, zi=self.zi_r)\n\n        # Mono mode\
+      \ check\n        if self.mono_mode:\n            m = 0.5 * (L + R)\n       \
+      \     L[:], R[:] = m, m\n\n        return n\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mono_mode: mono_mode
+    notch_freq: notch_freq
+    notch_q: '20'
+    sample_rate: '120000'
+  states:
+    _io_cache: ('C-QUAM Field Decoder', 'cquam_decoder', [('sample_rate', '120000'),
+      ('notch_freq', '9000'), ('notch_q', '30.0'), ('mono_mode', 'False')], [('0',
+      'complex', 1)], [('0', 'float', 1), ('1', 'float', 1)], '', ['mono_mode', 'notch_freq',
+      'notch_q'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1192.0, 248]
+    rotation: 90
+    state: disabled
+- name: epy_block_1
+  id: epy_block
+  parameters:
+    _source_code: "import numpy as np\nfrom gnuradio import gr\nimport pmt\n\nclass\
+      \ notch_frequency_controller(gr.basic_block):\n    def __init__(self, notch_mode=3,\
+      \ notch_freq_v=5000):\n        gr.basic_block.__init__(self,\n            name=\"\
+      Notch Frequency Controller\",\n            in_sig=None,\n            out_sig=None\n\
+      \        )\n        self.message_port_register_out(pmt.intern(\"notch_freq\"\
+      ))\n        self.notch_mode = notch_mode\n        self.notch_freq_v = notch_freq_v\n\
+      \        self.last_freq = None\n        self.freq_map = {0: 5000, 1: 9000, 2:\
+      \ 10000, 3: notch_freq_v}\n        self._publish_freq()\n        \n    def set_notch_mode(self,\
+      \ mode):\n        self.notch_mode = int(mode)\n        print(f\"Mode: {self.notch_mode}\"\
+      )\n        self._publish_freq()\n        \n    def set_notch_freq_v(self, freq):\n\
+      \        self.notch_freq_v = int(freq)\n        if self.notch_mode == 3:\n \
+      \           self._publish_freq()\n        \n    def _publish_freq(self):\n \
+      \       if self.notch_mode in self.freq_map:\n            freq = self.freq_map[self.notch_mode]\n\
+      \            if self.notch_mode == 3:\n                freq = self.notch_freq_v\n\
+      \        else:\n            freq = self.notch_freq_v\n        \n        if freq\
+      \ != self.last_freq:\n            self.last_freq = freq\n            print(f\"\
+      Publishing: {freq} Hz\")\n            self.message_port_pub(pmt.intern(\"notch_freq\"\
+      ), pmt.from_long(int(freq)))\n            \n    def work(self, input_items,\
+      \ output_items):\n        return -1\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    notch_freq_v: notch_freq_v
+    notch_mode: notch_mode
+  states:
+    _io_cache: ('Notch Frequency Controller', 'notch_frequency_controller', [('notch_mode', 
+      '3'), ('notch_freq_v', '5000')], [], [('notch_freq', 'message', 1)], '', ['set_notch_mode',
+      'set_notch_freq_v'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [528, 16.0]
+    rotation: 0
+    state: enabled
+- name: epy_block_5
+  id: epy_block
+  parameters:
+    _source_code: "import numpy as np\nfrom gnuradio import gr\nimport math\nimport\
+      \ pmt\nfrom scipy import signal\n\nclass cquam_decoder(gr.sync_block):\n   \
+      \ def __init__(self, sample_rate=120000, notch_freq=9000, notch_q=30.0, mono_mode=False):\n\
+      \        gr.sync_block.__init__(self,\n            name=\"C-QUAM Field Decoder\"\
+      ,\n            in_sig=[np.complex64],\n            out_sig=[np.float32, np.float32]\n\
+      \        )\n        self.fs = float(sample_rate)\n        self.notch_freq =\
+      \ notch_freq\n        self.notch_q = notch_q\n        self.mono_mode = mono_mode\n\
+      \        \n        \n        # PLL & States\n        self.zeta, self.omegaN\
+      \ = 0.707, 100.0\n        self._update_gains()\n        self.phz, self.omega2,\
+      \ self.cos_gamma = 0.0, 0.0, 1.0\n        self.lock_level, self.pilot_mag =\
+      \ 0.0, 0.0\n        \n        # Initialize filter coefficients and states\n\
+      \        self._update_notch_coeffs()\n        self.zi_l = signal.lfilter_zi(self.b,\
+      \ self.a) * 0\n        self.zi_r = signal.lfilter_zi(self.b, self.a) * 0\n \
+      \       \n        # Register message port for notch frequency updates\n    \
+      \    self.message_port_register_in(pmt.intern(\"notch_freq\"))\n        self.set_msg_handler(pmt.intern(\"\
+      notch_freq\"), self.handle_notch_freq)\n\n    def _update_gains(self):\n   \
+      \     T = 1.0 / self.fs\n        denom = 1.0 + 2.0 * self.zeta * self.omegaN\
+      \ * T + (self.omegaN * T)**2\n        self.alpha = (2.0 * self.zeta * self.omegaN\
+      \ * T) / denom\n        self.beta = ((self.omegaN * T)**2) / denom\n\n    def\
+      \ _update_notch_coeffs(self):\n        # Optimized Scipy notch\n        self.b,\
+      \ self.a = signal.iirnotch(self.notch_freq, self.notch_q, self.fs)\n\n    def\
+      \ set_notch_freq(self, notch_freq):\n        if self.notch_freq != notch_freq:\n\
+      \            self.notch_freq = notch_freq\n            print(f\"DEBUG: Notch\
+      \ frequency updated to {self.notch_freq} Hz\")\n            self._update_notch_coeffs()\n\
+      \n    def set_notch_q(self, notch_q):\n        if self.notch_q != notch_q:\n\
+      \            self.notch_q = notch_q\n            self._update_notch_coeffs()\n\
+      \n    def set_mono_mode(self, mode):\n        self.mono_mode = bool(mode)\n\n\
+      \    def handle_notch_freq(self, msg):\n        \"\"\"Handle notch frequency\
+      \ changes from GUI variable\"\"\"\n        try:\n            if isinstance(msg,\
+      \ pmt.pmt_object):\n                freq_val = pmt.to_float(msg)\n         \
+      \   else:\n                freq_val = float(msg)\n            \n           \
+      \ if self.notch_freq != freq_val:\n                self.notch_freq = freq_val\n\
+      \                print(f\"DEBUG: Notch frequency message received: {self.notch_freq}\
+      \ Hz\")\n                self._update_notch_coeffs()\n        except Exception\
+      \ as e:\n            print(f\"Error handling notch_freq message: {e}\")\n\n\
+      \    def get_lock_status(self):\n        return self.lock_level\n\n    def get_pilot_status(self):\n\
+      \        return 1.0 if self.pilot_mag > 0.015 else 0.0\n\n    def work(self,\
+      \ input_items, output_items):\n        inp = input_items[0]\n        L_out =\
+      \ output_items[0]\n        R_out = output_items[1]\n        n = len(inp)\n\n\
+      \        # Buffers to hold raw demodulated audio for vector filtering\n    \
+      \    raw_l = np.zeros(n, dtype=np.float32)\n        raw_r = np.zeros(n, dtype=np.float32)\n\
+      \        \n        phz, omega2, cos_gamma = self.phz, self.omega2, self.cos_gamma\n\
+      \        \n        # 1. PER-SAMPLE DEMODULATION & MONITORING\n        for i\
+      \ in range(n):\n            vco = math.cos(phz) - 1j * math.sin(phz)\n     \
+      \       bb = inp[i] * vco\n            I, Q = bb.real, bb.imag\n           \
+      \ env = math.sqrt(I*I + Q*Q) + 1e-9\n            \n            # PLL\n     \
+      \       det = Q / env \n            omega2 += self.beta * det\n            phz\
+      \ = (phz + self.alpha * det + omega2) % (2.0 * math.pi)\n\n            # C-QUAM\
+      \ Logic\n            cos_gamma += 0.005 * ((I / env) - cos_gamma)\n        \
+      \    LpR = (env * cos_gamma) - 1.0\n            LmR = Q / cos_gamma\n\n    \
+      \        # Monitor Logic (Lock & 25Hz Pilot)\n            self.lock_level +=\
+      \ 0.001 * (max(0, I/env) - self.lock_level)\n            self.pilot_mag += 0.0002\
+      \ * (abs(LmR) - self.pilot_mag)\n\n            raw_l[i], raw_r[i] = 0.5*(LpR\
+      \ + LmR), 0.5*(LpR - LmR)\n\n        self.phz, self.omega2, self.cos_gamma =\
+      \ phz, omega2, cos_gamma\n\n        # 2. VECTORIZED NOTCH FILTERING (OUTSIDE\
+      \ THE LOOP)\n        L_out[:], self.zi_l = signal.lfilter(self.b, self.a, raw_l,\
+      \ zi=self.zi_l)\n        R_out[:], self.zi_r = signal.lfilter(self.b, self.a,\
+      \ raw_r, zi=self.zi_r)\n\n        if self.mono_mode:\n            m = 0.5 *\
+      \ (L_out + R_out)\n            L_out[:], R_out[:] = m, m\n\n        return n\n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    mono_mode: mono_mode
+    notch_freq: '9000'
+    notch_q: '30'
+    sample_rate: '120000'
+  states:
+    _io_cache: ('C-QUAM Field Decoder', 'cquam_decoder', [('sample_rate', '120000'),
+      ('notch_freq', '9000'), ('notch_q', '30.0'), ('mono_mode', 'False')], [('0',
+      'complex', 1), ('notch_freq', 'message', 1)], [('0', 'float', 1), ('1', 'float',
+      1)], '', ['mono_mode', 'notch_freq', 'notch_q'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [728.0, 0]
+    rotation: 90
+    state: enabled
+- name: freq_xlating_fft_filter_ccc_0
+  id: freq_xlating_fft_filter_ccc
+  parameters:
+    affinity: ''
+    alias: ''
+    center_freq: -100e3
+    comment: ''
+    decim: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nthreads: '1'
+    samp_delay: '0'
+    samp_rate: samp_rate
+    taps: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [240, 400.0]
+    rotation: 0
+    state: enabled
+- name: lock_val
+  id: qtgui_ledindicator
+  parameters:
+    affinity: ''
+    alias: ''
+    cellalignment: '2'
+    comment: ''
+    gui_hint: ''
+    label: Carrier Lock
+    maxSize: '40'
+    offColor: red
+    onColor: green
+    position: '1'
+    state: True if Stereo_Lock > 0.7 else False
+    verticalalignment: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [504, 232.0]
+    rotation: 0
+    state: enabled
+- name: low_pass_filter_0
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: ''
+    cutoff_freq: audio_bw
+    decim: '1'
+    gain: '3'
+    interp: '1'
+    maxoutbuf: '16'
+    minoutbuf: '4'
+    samp_rate: '120000'
+    type: interp_fir_filter_ccf
+    width: '2000'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [692.0, 248]
+    rotation: 90
+    state: enabled
+- name: pilot_led
+  id: qtgui_ledindicator
+  parameters:
+    affinity: ''
+    alias: ''
+    cellalignment: '3'
+    comment: ''
+    gui_hint: ''
+    label: Stereo Pilot
+    maxSize: '40'
+    offColor: black
+    onColor: blue
+    position: '1'
+    state: True if pilot_val > 0.5 else False
+    verticalalignment: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [488, 144.0]
+    rotation: 0
+    state: enabled
+- name: rational_resampler_xxx_0_0_0
+  id: rational_resampler_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decim: '1000'
+    fbw: '0'
+    interp: '120'
+    maxoutbuf: '16'
+    minoutbuf: '4'
+    taps: '[]'
+    type: ccc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [456, 408.0]
+    rotation: 0
+    state: enabled
+- name: rational_resampler_xxx_0_0_0_0
+  id: rational_resampler_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decim: '120'
+    fbw: '0'
+    interp: '48'
+    maxoutbuf: '16'
+    minoutbuf: '4'
+    taps: '[]'
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [832.0, 80]
+    rotation: 270
+    state: enabled
+- name: rational_resampler_xxx_0_0_0_0_0
+  id: rational_resampler_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    decim: '120'
+    fbw: '0'
+    interp: '48'
+    maxoutbuf: '16'
+    minoutbuf: '4'
+    taps: '[]'
+    type: fff
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [944.0, 80]
+    rotation: 270
+    state: enabled
+- name: rtlsdr_source_0
+  id: rtlsdr_source
+  parameters:
+    affinity: ''
+    alias: ''
+    ant0: ''
+    ant1: ''
+    ant10: ''
+    ant11: ''
+    ant12: ''
+    ant13: ''
+    ant14: ''
+    ant15: ''
+    ant16: ''
+    ant17: ''
+    ant18: ''
+    ant19: ''
+    ant2: ''
+    ant20: ''
+    ant21: ''
+    ant22: ''
+    ant23: ''
+    ant24: ''
+    ant25: ''
+    ant26: ''
+    ant27: ''
+    ant28: ''
+    ant29: ''
+    ant3: ''
+    ant30: ''
+    ant31: ''
+    ant4: ''
+    ant5: ''
+    ant6: ''
+    ant7: ''
+    ant8: ''
+    ant9: ''
+    args: rtl=0,direct_samp=2
+    bb_gain0: '1'
+    bb_gain1: '20'
+    bb_gain10: '20'
+    bb_gain11: '20'
+    bb_gain12: '20'
+    bb_gain13: '20'
+    bb_gain14: '20'
+    bb_gain15: '20'
+    bb_gain16: '20'
+    bb_gain17: '20'
+    bb_gain18: '20'
+    bb_gain19: '20'
+    bb_gain2: '20'
+    bb_gain20: '20'
+    bb_gain21: '20'
+    bb_gain22: '20'
+    bb_gain23: '20'
+    bb_gain24: '20'
+    bb_gain25: '20'
+    bb_gain26: '20'
+    bb_gain27: '20'
+    bb_gain28: '20'
+    bb_gain29: '20'
+    bb_gain3: '20'
+    bb_gain30: '20'
+    bb_gain31: '20'
+    bb_gain4: '20'
+    bb_gain5: '20'
+    bb_gain6: '20'
+    bb_gain7: '20'
+    bb_gain8: '20'
+    bb_gain9: '20'
+    bw0: '15000'
+    bw1: '0'
+    bw10: '0'
+    bw11: '0'
+    bw12: '0'
+    bw13: '0'
+    bw14: '0'
+    bw15: '0'
+    bw16: '0'
+    bw17: '0'
+    bw18: '0'
+    bw19: '0'
+    bw2: '0'
+    bw20: '0'
+    bw21: '0'
+    bw22: '0'
+    bw23: '0'
+    bw24: '0'
+    bw25: '0'
+    bw26: '0'
+    bw27: '0'
+    bw28: '0'
+    bw29: '0'
+    bw3: '0'
+    bw30: '0'
+    bw31: '0'
+    bw4: '0'
+    bw5: '0'
+    bw6: '0'
+    bw7: '0'
+    bw8: '0'
+    bw9: '0'
+    clock_source0: ''
+    clock_source1: ''
+    clock_source2: ''
+    clock_source3: ''
+    clock_source4: ''
+    clock_source5: ''
+    clock_source6: ''
+    clock_source7: ''
+    comment: ''
+    corr0: '0'
+    corr1: '0'
+    corr10: '0'
+    corr11: '0'
+    corr12: '0'
+    corr13: '0'
+    corr14: '0'
+    corr15: '0'
+    corr16: '0'
+    corr17: '0'
+    corr18: '0'
+    corr19: '0'
+    corr2: '0'
+    corr20: '0'
+    corr21: '0'
+    corr22: '0'
+    corr23: '0'
+    corr24: '0'
+    corr25: '0'
+    corr26: '0'
+    corr27: '0'
+    corr28: '0'
+    corr29: '0'
+    corr3: '0'
+    corr30: '0'
+    corr31: '0'
+    corr4: '0'
+    corr5: '0'
+    corr6: '0'
+    corr7: '0'
+    corr8: '0'
+    corr9: '0'
+    dc_offset_mode0: '0'
+    dc_offset_mode1: '0'
+    dc_offset_mode10: '0'
+    dc_offset_mode11: '0'
+    dc_offset_mode12: '0'
+    dc_offset_mode13: '0'
+    dc_offset_mode14: '0'
+    dc_offset_mode15: '0'
+    dc_offset_mode16: '0'
+    dc_offset_mode17: '0'
+    dc_offset_mode18: '0'
+    dc_offset_mode19: '0'
+    dc_offset_mode2: '0'
+    dc_offset_mode20: '0'
+    dc_offset_mode21: '0'
+    dc_offset_mode22: '0'
+    dc_offset_mode23: '0'
+    dc_offset_mode24: '0'
+    dc_offset_mode25: '0'
+    dc_offset_mode26: '0'
+    dc_offset_mode27: '0'
+    dc_offset_mode28: '0'
+    dc_offset_mode29: '0'
+    dc_offset_mode3: '0'
+    dc_offset_mode30: '0'
+    dc_offset_mode31: '0'
+    dc_offset_mode4: '0'
+    dc_offset_mode5: '0'
+    dc_offset_mode6: '0'
+    dc_offset_mode7: '0'
+    dc_offset_mode8: '0'
+    dc_offset_mode9: '0'
+    freq0: freq+100000
+    freq1: 100e6
+    freq10: 100e6
+    freq11: 100e6
+    freq12: 100e6
+    freq13: 100e6
+    freq14: 100e6
+    freq15: 100e6
+    freq16: 100e6
+    freq17: 100e6
+    freq18: 100e6
+    freq19: 100e6
+    freq2: 100e6
+    freq20: 100e6
+    freq21: 100e6
+    freq22: 100e6
+    freq23: 100e6
+    freq24: 100e6
+    freq25: 100e6
+    freq26: 100e6
+    freq27: 100e6
+    freq28: 100e6
+    freq29: 100e6
+    freq3: 100e6
+    freq30: 100e6
+    freq31: 100e6
+    freq4: 100e6
+    freq5: 100e6
+    freq6: 100e6
+    freq7: 100e6
+    freq8: 100e6
+    freq9: 100e6
+    gain0: '0'
+    gain1: '10'
+    gain10: '10'
+    gain11: '10'
+    gain12: '10'
+    gain13: '10'
+    gain14: '10'
+    gain15: '10'
+    gain16: '10'
+    gain17: '10'
+    gain18: '10'
+    gain19: '10'
+    gain2: '10'
+    gain20: '10'
+    gain21: '10'
+    gain22: '10'
+    gain23: '10'
+    gain24: '10'
+    gain25: '10'
+    gain26: '10'
+    gain27: '10'
+    gain28: '10'
+    gain29: '10'
+    gain3: '10'
+    gain30: '10'
+    gain31: '10'
+    gain4: '10'
+    gain5: '10'
+    gain6: '10'
+    gain7: '10'
+    gain8: '10'
+    gain9: '10'
+    gain_mode0: 'True'
+    gain_mode1: 'False'
+    gain_mode10: 'False'
+    gain_mode11: 'False'
+    gain_mode12: 'False'
+    gain_mode13: 'False'
+    gain_mode14: 'False'
+    gain_mode15: 'False'
+    gain_mode16: 'False'
+    gain_mode17: 'False'
+    gain_mode18: 'False'
+    gain_mode19: 'False'
+    gain_mode2: 'False'
+    gain_mode20: 'False'
+    gain_mode21: 'False'
+    gain_mode22: 'False'
+    gain_mode23: 'False'
+    gain_mode24: 'False'
+    gain_mode25: 'False'
+    gain_mode26: 'False'
+    gain_mode27: 'False'
+    gain_mode28: 'False'
+    gain_mode29: 'False'
+    gain_mode3: 'False'
+    gain_mode30: 'False'
+    gain_mode31: 'False'
+    gain_mode4: 'False'
+    gain_mode5: 'False'
+    gain_mode6: 'False'
+    gain_mode7: 'False'
+    gain_mode8: 'False'
+    gain_mode9: 'False'
+    if_gain0: '0'
+    if_gain1: '20'
+    if_gain10: '20'
+    if_gain11: '20'
+    if_gain12: '20'
+    if_gain13: '20'
+    if_gain14: '20'
+    if_gain15: '20'
+    if_gain16: '20'
+    if_gain17: '20'
+    if_gain18: '20'
+    if_gain19: '20'
+    if_gain2: '20'
+    if_gain20: '20'
+    if_gain21: '20'
+    if_gain22: '20'
+    if_gain23: '20'
+    if_gain24: '20'
+    if_gain25: '20'
+    if_gain26: '20'
+    if_gain27: '20'
+    if_gain28: '20'
+    if_gain29: '20'
+    if_gain3: '20'
+    if_gain30: '20'
+    if_gain31: '20'
+    if_gain4: '20'
+    if_gain5: '20'
+    if_gain6: '20'
+    if_gain7: '20'
+    if_gain8: '20'
+    if_gain9: '20'
+    iq_balance_mode0: '0'
+    iq_balance_mode1: '0'
+    iq_balance_mode10: '0'
+    iq_balance_mode11: '0'
+    iq_balance_mode12: '0'
+    iq_balance_mode13: '0'
+    iq_balance_mode14: '0'
+    iq_balance_mode15: '0'
+    iq_balance_mode16: '0'
+    iq_balance_mode17: '0'
+    iq_balance_mode18: '0'
+    iq_balance_mode19: '0'
+    iq_balance_mode2: '0'
+    iq_balance_mode20: '0'
+    iq_balance_mode21: '0'
+    iq_balance_mode22: '0'
+    iq_balance_mode23: '0'
+    iq_balance_mode24: '0'
+    iq_balance_mode25: '0'
+    iq_balance_mode26: '0'
+    iq_balance_mode27: '0'
+    iq_balance_mode28: '0'
+    iq_balance_mode29: '0'
+    iq_balance_mode3: '0'
+    iq_balance_mode30: '0'
+    iq_balance_mode31: '0'
+    iq_balance_mode4: '0'
+    iq_balance_mode5: '0'
+    iq_balance_mode6: '0'
+    iq_balance_mode7: '0'
+    iq_balance_mode8: '0'
+    iq_balance_mode9: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nchan: '1'
+    num_mboards: '1'
+    sample_rate: samp_rate
+    sync: sync
+    time_source0: ''
+    time_source1: ''
+    time_source2: ''
+    time_source3: ''
+    time_source4: ''
+    time_source5: ''
+    time_source6: ''
+    time_source7: ''
+    type: fc32
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 328.0]
+    rotation: 0
+    state: enabled
+- name: satellites_rms_agc_0
+  id: satellites_rms_agc
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha: 1e-4
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    reference: '0.2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [640, 424.0]
+    rotation: 0
+    state: enabled
 
-# Push buttons for frequency selection
-push_button_5KHz = True
-push_button_9KHz = False
-push_button_10KHz = False
-push_button_variable = False  # Set based on user input
+connections:
+- [epy_block_0, '0', rational_resampler_xxx_0_0_0_0_0, '0']
+- [epy_block_0, '1', rational_resampler_xxx_0_0_0_0, '0']
+- [epy_block_1, notch_freq, epy_block_5, notch_freq]
+- [epy_block_5, '0', rational_resampler_xxx_0_0_0_0, '0']
+- [epy_block_5, '1', rational_resampler_xxx_0_0_0_0_0, '0']
+- [freq_xlating_fft_filter_ccc_0, '0', rational_resampler_xxx_0_0_0, '0']
+- [low_pass_filter_0, '0', epy_block_0, '0']
+- [low_pass_filter_0, '0', epy_block_5, '0']
+- [rational_resampler_xxx_0_0_0, '0', satellites_rms_agc_0, '0']
+- [rational_resampler_xxx_0_0_0_0, '0', audio_sink_0, '0']
+- [rational_resampler_xxx_0_0_0_0_0, '0', audio_sink_0, '1']
+- [rtlsdr_source_0, '0', freq_xlating_fft_filter_ccc_0, '0']
+- [satellites_rms_agc_0, '0', low_pass_filter_0, '0']
 
-# Improved notch frequency slider
-notch_freq_v = 1000  # Starting frequency
-# Frequency range: 100Hz to 15000Hz
-notch_freq_v_slider = (100, 15000)
-
-# Function to handle frequency control
-class NotchFrequencyController:
-    def __init__(self):
-        self.frequency = notch_freq_v
-
-    def update_frequency(self):
-        if push_button_5KHz:
-            self.frequency = 5000
-        elif push_button_9KHz:
-            self.frequency = 9000
-        elif push_button_10KHz:
-            self.frequency = 10000
-        # Handle variable button for custom frequency
-        elif push_button_variable:
-            # Assuming user input is provided as a variable
-            self.frequency = notch_freq_v  
-        else:
-            self.frequency = notch_freq_v  # Fallback to default
-
-        # Publish frequency messages to epy_block_5
-        self.publish_frequency()
-
-    def publish_frequency(self):
-        # Code to publish frequency messages
-        print(f"Publishing frequency: {self.frequency}Hz")  # Replace with actual message port code
-
-# Create an instance of the controller
-notch_frequency_controller = NotchFrequencyController()
-notch_frequency_controller.update_frequency()
+metadata:
+  file_format: 1
+  grc_version: 3.10.12.0
