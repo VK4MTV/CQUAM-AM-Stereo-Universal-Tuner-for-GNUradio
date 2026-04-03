@@ -59,10 +59,7 @@ class cquam_decoder(gr.sync_block):
     def handle_notch_freq(self, msg):
         """Handle notch frequency changes from GUI variable"""
         try:
-            if isinstance(msg, pmt.pmt_object):
-                freq_val = pmt.to_float(msg)
-            else:
-                freq_val = float(msg)
+            freq_val = pmt.to_long(msg)  # Use pmt.to_long() instead of isinstance check
             
             if self.notch_freq != freq_val:
                 self.notch_freq = freq_val
@@ -75,7 +72,9 @@ class cquam_decoder(gr.sync_block):
         return self.lock_level
 
     def get_pilot_status(self):
-        return 1.0 if self.pilot_mag > 0.015 else 0.0
+        if self.lock_level > 0.8 and self.pilot_mag > 0.05:
+            return 1.0
+        return 0.0
 
     def work(self, input_items, output_items):
         inp = input_items[0]
