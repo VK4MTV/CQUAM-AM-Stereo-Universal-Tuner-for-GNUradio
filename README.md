@@ -1,8 +1,10 @@
 # CQUAM-AM-Stereo-Universal-Tuner-for-GNUradio
 #############################################################################################
+
 DONT USE THE GNURADIO FLOWGRAPH ANYMORE, IT IS OUT OF DATE!!! RUN THE STANDALONE PY SCRIPT
 USE THE AMRADIO.PY INSTEAD, AND DOWNLOAD THE LATEST EPYBLOCK_5 AND RUN IT IN THE SAME FOLDER
 ITS THE LATEST MOST REFINED VERSION.
+
 ###############################################################################################
 
 The aim is to create a pleasurable AM listening experience even on mono transmissions, its close to polished in performance but needs work on the notch filter selection, the GUI interface is basic, and has only RTL SDR support
@@ -23,6 +25,6 @@ Have a play and have fun with it, cheers, VK4MTV aka Christopher O'Reilly.
 
 PROBLEMS STILL EXISTING BEFORE MOVING ON: issues are still existing with the pilot light, more sophisticated code will be added to detect a specific 25Hz pilot tone, it will be fixed on next update. The 25Hz detector was previously inefficient on CPU power, so it was simplified. eventual agenda is to export this radio into embedded systems once refinement and processor efficiency has been achieved at the moment this software is quite heavy on processor
 
-03/04/2026 SECOND UPDATE: Finally, the Pilot light is fixed, the code has been made more efficient on CPU, there are still further refinements to go to lighten the CPU load and further refinement. working on the GUI interface so far has been low priority, it looks odd and only functional for testing and development purposes.
+03/04/2026 SECOND UPDATE: Finally, the Pilot light is fixed, a very efficient code typically used in DTMF detection in embedded systems which is now used for the 25Hz detection, its called the "Direct Form II Biquad" the rest of the code has been made more efficient on CPU, there are still further refinements to go to lighten the CPU load and further refinement, this is to do with the notch filter. working on the GUI interface so far has been low priority, it looks odd and only functional for testing and development purposes.
 
 so all is working now, have fun with it, dont use the flowgraph anympre for GNUradio, as the blocks I am trying to use is buggy and doesnt work for notch filter selection, plus its out of date.
