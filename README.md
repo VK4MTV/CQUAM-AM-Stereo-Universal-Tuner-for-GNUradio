@@ -12,3 +12,7 @@ Have a play and have fun with it, cheers, VK4MTV aka Christopher O'Reilly.
 
 
 23/03/2026 UPDATE: an issue was found with the pilot tone detecor, Fixed!
+
+03/04/2026 UPDATE: notch selection has beeh fixed, the problem happens to be within GNU radio QT selector blocks, it has a bug that prevents the selection block from being able to talk to the AM Stereo block to change filter settings, since the modules within GNUradio are immutable, this bug cannot be fixed, editing has now turned to working on the exported Python files from now on. 
+
+PROBLEMS STILL EXISTING BEFORE MOVING ON: issues are still existing with the pilot light, more sophisticated code will be added to detect a specific 25Hz pilot tone, it will be fixed on next update. The 25Hz detector was previously inefficient on CPU power, so it was simplified. eventual agenda is to export this radio into embedded systems once refinement and processor efficiency has been achieved at the moment this software is quite heavy on processor
