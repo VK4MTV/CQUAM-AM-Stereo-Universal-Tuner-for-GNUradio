@@ -1,4 +1,10 @@
 # CQUAM-AM-Stereo-Universal-Tuner-for-GNUradio
+#############################################################################################
+DONT USE THE GNURADIO FLOWGRAPH ANYMORE, IT IS OUT OF DATE!!! RUN THE STANDALONE PY SCRIPT
+USE THE AMRADIO.PY INSTEAD, AND DOWNLOAD THE LATEST EPYBLOCK_5 AND RUN IT IN THE SAME FOLDER
+ITS THE LATEST MOST REFINED VERSION.
+###############################################################################################
+
 The aim is to create a pleasurable AM listening experience even on mono transmissions, its close to polished in performance but needs work on the notch filter selection, the GUI interface is basic, and has only RTL SDR support
 tunes from 100KHz to 30,000KHz, so will cover the longwave and Shortwave bands as well
 Notch filter selection: 5KHz for some shortwave broadcast bands, 9KHz for most other regions, 10KHz for USA, not responding yet, needs some work, the workaround is to fill in the notch settings in the default field of the selector interface then relaunch the application, the Notch filter is extremely effective, takes away one of the worst complaints of AM radio is the high pitched squeal
