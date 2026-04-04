@@ -21,6 +21,7 @@ class cquam_decoder(gr.sync_block):
         self._update_gains()
         self.phz, self.omega2, self.cos_gamma = 0.0, 0.0, 1.0
         self.lock_level, self.pilot_mag = 0.0, 0.0
+        self.vco = 1.0 + 0j # Added missing VCO initialisation
         
         # Initialize filter coefficients and memory (Manual Biquad)
         self._update_notch_coeffs()
@@ -42,10 +43,8 @@ class cquam_decoder(gr.sync_block):
 
     def _update_notch_coeffs(self):
         b, a = signal.iirnotch(self.notch_freq, self.notch_q, self.fs)
-        # Store as simple floats for the manual loop
         self.nb0, self.nb1, self.nb2 = b[0], b[1], b[2]
         self.na1, self.na2 = a[1], a[2]
-        # Reset memory to stop pops when changing freq
         self.w1_l, self.w2_l = 0.0, 0.0
         self.w1_r, self.w2_r = 0.0, 0.0
 
@@ -76,10 +75,12 @@ class cquam_decoder(gr.sync_block):
         L_out, R_out = output_items[0], output_items[1]
         n = len(inp)
 
-        # Local variables for max speed (Avoids 'self.' lookups in the loop)
+        # Local variables for speed
         phz, omega2, cos_gamma = self.phz, self.omega2, self.cos_gamma
+        vco = self.vco
         s1, s2 = self.g_s1, self.g_s2
         g_coeff = self.g_coeff
+        alpha, beta = self.alpha, self.beta
         
         # Notch filter local states
         nb0, nb1, nb2, na1, na2 = self.nb0, self.nb1, self.nb2, self.na1, self.na2
@@ -87,50 +88,54 @@ class cquam_decoder(gr.sync_block):
         w1_r, w2_r = self.w1_r, self.w2_r
 
         for i in range(n):
-            # 1. Demodulation
-            vco = math.cos(phz) - 1j * math.sin(phz)
+            # 1. Complex Demod
             bb = inp[i] * vco
             I, Q = bb.real, bb.imag
-            env = math.sqrt(I*I + Q*Q) + 1e-9
             
-            # 2. PLL & C-QUAM Sync
+            # 2. Optimized Envelope
+            abs_I, abs_Q = abs(I), abs(Q)
+            env = (abs_I if abs_I > abs_Q else abs_Q) + 0.4 * (abs_Q if abs_I > abs_Q else abs_I) + 1e-9
+
+            # 3. PLL & C-QUAM
             det = Q / env 
-            omega2 += self.beta * det
-            phz = (phz + self.alpha * det + omega2) % (2.0 * math.pi)
+            omega2 += beta * det
             cos_gamma += 0.005 * ((I / env) - cos_gamma)
             
+            # 4. Phase Rotation (Phasor update)
+            d_phz = alpha * det + omega2
+            vco *= complex(math.cos(d_phz), -math.sin(d_phz))
+            if i % 512 == 0: vco /= abs(vco)
+
+            # 5. Extract Stereo components
             LpR = (env * cos_gamma) - 1.0
             LmR = Q / cos_gamma
-
-            # 3. Pilot Detection (Goertzel)
-            s0 = LmR + g_coeff * s1 - s2
-            s2, s1 = s1, s0
-
-            # 4. Carrier Lock Monitoring
-            self.lock_level += 0.001 * (max(0, I/env) - self.lock_level)
-            
-            # 5. Extract Raw L/R
             raw_l = 0.5 * (LpR + LmR)
             raw_r = 0.5 * (LpR - LmR)
 
-            # 6. Manual Notch Filter (Direct Form II Biquad)
-            # Left
+            # 6. Pilot Detection (Goertzel)
+            s0 = LmR + g_coeff * s1 - s2
+            s2, s1 = s1, s0
+
+            # 7. Monitoring
+            self.lock_level += 0.001 * (max(0, I/env) - self.lock_level)
+            
+            # 8. Manual Notch Filter
             wn0_l = raw_l - na1*w1_l - na2*w2_l
             L_out[i] = nb0*wn0_l + nb1*w1_l + nb2*w2_l
             w2_l, w1_l = w1_l, wn0_l
             
-            # Right
             wn0_r = raw_r - na1*w1_r - na2*w2_r
             R_out[i] = nb0*wn0_r + nb1*w1_r + nb2*w2_r
             w2_r, w1_r = w1_r, wn0_r
 
-        # Save all states back to class
+        # Save states
+        self.vco = vco
         self.phz, self.omega2, self.cos_gamma = phz, omega2, cos_gamma
         self.g_s1, self.g_s2 = s1, s2
         self.w1_l, self.w2_l = w1_l, w2_l
         self.w1_r, self.w2_r = w1_r, w2_r
 
-        # Final Pilot Magnitude for the block
+        # Final Pilot calculation
         power = s1*s1 + s2*s2 - s1*s2*g_coeff
         self.pilot_mag = 0.9 * self.pilot_mag + 0.1 * (math.sqrt(max(0, power)) / n)
 
