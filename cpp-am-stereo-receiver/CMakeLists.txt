@@ -40,6 +40,7 @@ set(SOURCES
     src/dsp/DSPPipeline.cpp
     src/dsp/FreqXlator.cpp
     src/dsp/Resampler.cpp
+    src/dsp/RmsAgc.cpp
     src/dsp/LowPassFilter.cpp
     src/dsp/CQUAMDecoder.cpp
     src/audio/AudioOutput.cpp
@@ -51,6 +52,7 @@ set(HEADERS
     src/dsp/DSPPipeline.h
     src/dsp/FreqXlator.h
     src/dsp/Resampler.h
+    src/dsp/RmsAgc.h
     src/dsp/LowPassFilter.h
     src/dsp/CQUAMDecoder.h
     src/audio/AudioOutput.h

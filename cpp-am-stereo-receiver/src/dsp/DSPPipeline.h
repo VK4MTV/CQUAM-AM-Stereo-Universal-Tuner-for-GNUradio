@@ -6,6 +6,7 @@
 //   SDR IQ @ 1 MHz
 //   → FreqXlator  (−100 kHz offset)
 //   → ComplexResampler (1 MHz → 96 kHz,  interpolate=12, decimate=125)
+//   → RmsAgc (alpha=1e-4, reference=0.2)  ← normalises IF envelope
 //   → LowPassFilter (variable audio bandwidth)
 //   → CQUAMDecoder  (96 kHz → stereo float L/R)
 //   → FloatResampler × 2 (96 kHz → 48 kHz, interpolate=1, decimate=2)
@@ -18,6 +19,7 @@
 
 #include "FreqXlator.h"
 #include "Resampler.h"
+#include "RmsAgc.h"
 #include "LowPassFilter.h"
 #include "CQUAMDecoder.h"
 
@@ -61,6 +63,7 @@ private:
 
     FreqXlator      xlator_;         // -100 kHz
     ComplexResampler resampler1_;    // 1 MHz → 96 kHz
+    RmsAgc          agc_;           // IF envelope normaliser (alpha=1e-4, ref=0.2)
     LowPassFilter   lpf_;           // audio bandwidth shaping
     CQUAMDecoder    decoder_;       // C-QUAM stereo decode
     FloatResampler  resamplerL_;    // 96 kHz → 48 kHz (left)
