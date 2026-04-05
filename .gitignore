@@ -1,0 +1,12 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# GNU Radio temp
+*.log
+
+# Editor temp
+*~
+*.swp
+.DS_Store
