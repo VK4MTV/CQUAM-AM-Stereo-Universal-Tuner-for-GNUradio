@@ -199,50 +199,6 @@ void MainWindow::buildUI()
         mainLayout->addWidget(grp);
     }
 
-    // ── RF Gain ───────────────────────────────────────────────────────────────
-    {
-        auto* grp = new QGroupBox("RF Gain (Manual)", this);
-        auto* lay = new QHBoxLayout(grp);
-
-        rfGainSlider_ = new QSlider(Qt::Horizontal, this);
-        rfGainSlider_->setRange(0, 49);
-        rfGainSlider_->setValue(30);
-
-        rfGainLabel_ = new QLabel("30 dB", this);
-        rfGainLabel_->setMinimumWidth(60);
-
-        connect(rfGainSlider_, &QSlider::valueChanged, this, [this](int v) {
-            rfGainLabel_->setText(QString::number(v) + " dB");
-            onRfGainChanged(v);
-        });
-
-        lay->addWidget(rfGainSlider_);
-        lay->addWidget(rfGainLabel_);
-        mainLayout->addWidget(grp);
-    }
-
-    // ── Audio Output Gain ─────────────────────────────────────────────────────
-    {
-        auto* grp = new QGroupBox("Audio Output Gain", this);
-        auto* lay = new QHBoxLayout(grp);
-
-        audioGainSlider_ = new QSlider(Qt::Horizontal, this);
-        audioGainSlider_->setRange(1, 400);
-        audioGainSlider_->setValue(100);
-
-        audioGainLabel_ = new QLabel("100 %", this);
-        audioGainLabel_->setMinimumWidth(60);
-
-        connect(audioGainSlider_, &QSlider::valueChanged, this, [this](int v) {
-            audioGainLabel_->setText(QString::number(v) + " %");
-            onAudioGainChanged(v);
-        });
-
-        lay->addWidget(audioGainSlider_);
-        lay->addWidget(audioGainLabel_);
-        mainLayout->addWidget(grp);
-    }
-
     // ── Status indicators ─────────────────────────────────────────────────────
     {
         auto* grp = new QGroupBox("Status", this);
@@ -299,8 +255,8 @@ void MainWindow::startRadio()
     const double freqHz = freqSpinBox_->value() * 1'000.0;
     sdr_.setFrequency(freqHz - 100'000.0);
 
-    // Apply initial RF gain
-    sdr_.setGain(static_cast<double>(rfGainSlider_->value()));
+    // Apply fixed RF gain (calibrated value; not exposed to the user)
+    sdr_.setGain(30.0);
 
     // Start SDR stream → feed DSP pipeline
     sdr_.startStream([this](const std::complex<float>* buf, std::size_t count) {
@@ -328,16 +284,6 @@ void MainWindow::onFreqChanged(int kHz)
 void MainWindow::onAudioBwChanged(int hz)
 {
     dsp_.setAudioBandwidth(static_cast<double>(hz));
-}
-
-void MainWindow::onRfGainChanged(int dB)
-{
-    sdr_.setGain(static_cast<double>(dB));
-}
-
-void MainWindow::onAudioGainChanged(int percent)
-{
-    dsp_.setAudioGain(percent / 100.0);
 }
 
 void MainWindow::onNotchModeChanged(int id)
