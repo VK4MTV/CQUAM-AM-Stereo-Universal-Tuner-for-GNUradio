@@ -7,6 +7,7 @@
 DSPPipeline::DSPPipeline()
     : xlator_   (-100'000.0, SDR_RATE)
     , resampler1_(RESAMP1_INTERP, RESAMP1_DECIM)
+    , agc_      (1e-4f, 0.2f)
     , lpf_      (IF_RATE, 10'000.0, 2'000.0)
     , decoder_  (IF_RATE, 5'000.0, 50.0, false)
     , resamplerL_(RESAMP2_INTERP, RESAMP2_DECIM)
@@ -65,17 +66,20 @@ void DSPPipeline::processIQ(const std::complex<float>* samples, std::size_t coun
     const std::size_t ifCount = resampler1_.process(ifBuf_.data(), count,
                                                      ifOut.data(), maxIf);
 
-    // ── 4. Low-pass filter (audio bandwidth shaping) ─────────────────────────
+    // ── 4. RMS AGC: normalise IF envelope before LPF and decoder ─────────────
+    agc_.process(ifOut.data(), ifCount);
+
+    // ── 5. Low-pass filter (audio bandwidth shaping) ─────────────────────────
     lpf_.process(ifOut.data(), ifCount);
 
-    // ── 5. C-QUAM decoder → L and R float channels ───────────────────────────
+    // ── 6. C-QUAM decoder → L and R float channels ───────────────────────────
     if (ifCount > lBuf_.size()) {
         lBuf_.resize(ifCount);
         rBuf_.resize(ifCount);
     }
     decoder_.process(ifOut.data(), lBuf_.data(), rBuf_.data(), ifCount);
 
-    // ── 6. Resample to 48 kHz (96 kHz → 48 kHz, factor 1/2) ─────────────────
+    // ── 7. Resample to 48 kHz (96 kHz → 48 kHz, factor 1/2) ─────────────────
     const std::size_t maxAudio = (ifCount * RESAMP2_INTERP) / RESAMP2_DECIM + 16;
     if (maxAudio > lAudio_.size()) {
         lAudio_.resize(maxAudio);
@@ -89,7 +93,7 @@ void DSPPipeline::processIQ(const std::complex<float>* samples, std::size_t coun
     const std::size_t frames = std::min(lFrames, rFrames);
     if (frames == 0 || !audioCallback_) return;
 
-    // ── 7. Interleave stereo and hand off to audio output ────────────────────
+    // ── 8. Interleave stereo and hand off to audio output ────────────────────
     if (frames * 2 > interleaved_.size())
         interleaved_.resize(frames * 2);
 
