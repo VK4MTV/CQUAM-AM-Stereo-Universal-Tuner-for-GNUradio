@@ -199,6 +199,50 @@ void MainWindow::buildUI()
         mainLayout->addWidget(grp);
     }
 
+    // ── RF Gain ───────────────────────────────────────────────────────────────
+    {
+        auto* grp = new QGroupBox("RF Gain (Manual)", this);
+        auto* lay = new QHBoxLayout(grp);
+
+        rfGainSlider_ = new QSlider(Qt::Horizontal, this);
+        rfGainSlider_->setRange(0, 49);
+        rfGainSlider_->setValue(30);
+
+        rfGainLabel_ = new QLabel("30 dB", this);
+        rfGainLabel_->setMinimumWidth(60);
+
+        connect(rfGainSlider_, &QSlider::valueChanged, this, [this](int v) {
+            rfGainLabel_->setText(QString::number(v) + " dB");
+            onRfGainChanged(v);
+        });
+
+        lay->addWidget(rfGainSlider_);
+        lay->addWidget(rfGainLabel_);
+        mainLayout->addWidget(grp);
+    }
+
+    // ── Audio Output Gain ─────────────────────────────────────────────────────
+    {
+        auto* grp = new QGroupBox("Audio Output Gain", this);
+        auto* lay = new QHBoxLayout(grp);
+
+        audioGainSlider_ = new QSlider(Qt::Horizontal, this);
+        audioGainSlider_->setRange(1, 400);
+        audioGainSlider_->setValue(100);
+
+        audioGainLabel_ = new QLabel("100 %", this);
+        audioGainLabel_->setMinimumWidth(60);
+
+        connect(audioGainSlider_, &QSlider::valueChanged, this, [this](int v) {
+            audioGainLabel_->setText(QString::number(v) + " %");
+            onAudioGainChanged(v);
+        });
+
+        lay->addWidget(audioGainSlider_);
+        lay->addWidget(audioGainLabel_);
+        mainLayout->addWidget(grp);
+    }
+
     // ── Status indicators ─────────────────────────────────────────────────────
     {
         auto* grp = new QGroupBox("Status", this);
@@ -248,9 +292,15 @@ void MainWindow::startRadio()
     deviceLabel_->setText(QString("Device: %1").arg(QString::fromStdString(dev.label)));
     deviceLabel_->setStyleSheet("color: #88ff88;");
 
-    // Apply initial frequency (7390 kHz + 100 kHz offset for direct sampling)
+    // Apply initial frequency (subtract 100 kHz offset so the SDR tunes to
+    // target - 100 kHz; the DSP FreqXlator then shifts the signal back up by
+    // +100 kHz, placing the station of interest at baseband and keeping DC
+    // leakage 100 kHz away from the wanted signal)
     const double freqHz = freqSpinBox_->value() * 1'000.0;
-    sdr_.setFrequency(freqHz + 100'000.0);
+    sdr_.setFrequency(freqHz - 100'000.0);
+
+    // Apply initial RF gain
+    sdr_.setGain(static_cast<double>(rfGainSlider_->value()));
 
     // Start SDR stream → feed DSP pipeline
     sdr_.startStream([this](const std::complex<float>* buf, std::size_t count) {
@@ -268,14 +318,26 @@ void MainWindow::stopRadio()
 // ── Slots ─────────────────────────────────────────────────────────────────────
 void MainWindow::onFreqChanged(int kHz)
 {
-    // RTL-SDR direct sampling: tune to target + 100 kHz offset
+    // RTL-SDR direct sampling: tune 100 kHz below the displayed frequency so
+    // that the DSP FreqXlator (+100 kHz) brings the wanted signal to baseband
+    // while keeping DC leakage well clear of the wanted signal.
     const double freqHz = static_cast<double>(kHz) * 1'000.0;
-    sdr_.setFrequency(freqHz + 100'000.0);
+    sdr_.setFrequency(freqHz - 100'000.0);
 }
 
 void MainWindow::onAudioBwChanged(int hz)
 {
     dsp_.setAudioBandwidth(static_cast<double>(hz));
+}
+
+void MainWindow::onRfGainChanged(int dB)
+{
+    sdr_.setGain(static_cast<double>(dB));
+}
+
+void MainWindow::onAudioGainChanged(int percent)
+{
+    dsp_.setAudioGain(percent / 100.0);
 }
 
 void MainWindow::onNotchModeChanged(int id)
