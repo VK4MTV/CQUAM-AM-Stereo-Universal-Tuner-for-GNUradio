@@ -13,7 +13,7 @@ DSPPipeline::DSPPipeline()
     , resamplerR_(RESAMP2_INTERP, RESAMP2_DECIM)
 {
     // Pre-allocate intermediate buffers
-    // Worst case: 4096 IQ in → /3*25 + margin IF samples
+    // Worst case: 4096 IQ in → ×12/125 + margin IF samples
     ifBuf_.resize(8192);
     lBuf_.resize(8192);
     rBuf_.resize(8192);
@@ -48,7 +48,7 @@ void DSPPipeline::processIQ(const std::complex<float>* samples, std::size_t coun
     // ── 2. Frequency translation: -100 kHz ───────────────────────────────────
     xlator_.process(ifBuf_.data(), count);
 
-    // ── 3. Rational resampler: 1 MHz → 120 kHz ───────────────────────────────
+    // ── 3. Rational resampler: 1 MHz → 96 kHz ────────────────────────────────
     const std::size_t maxIf = (count * RESAMP1_INTERP) / RESAMP1_DECIM + 64;
     if (maxIf > lBuf_.size()) {
         lBuf_.resize(maxIf);
@@ -70,7 +70,7 @@ void DSPPipeline::processIQ(const std::complex<float>* samples, std::size_t coun
     }
     decoder_.process(ifOut.data(), lBuf_.data(), rBuf_.data(), ifCount);
 
-    // ── 6. Resample to 48 kHz (120 kHz → 48 kHz, factor 2/5) ─────────────────
+    // ── 6. Resample to 48 kHz (96 kHz → 48 kHz, factor 1/2) ─────────────────
     const std::size_t maxAudio = (ifCount * RESAMP2_INTERP) / RESAMP2_DECIM + 16;
     if (maxAudio > lAudio_.size()) {
         lAudio_.resize(maxAudio);

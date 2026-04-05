@@ -27,10 +27,10 @@ The application is a standalone C++17 real-time DSP pipeline that:
                          ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │ ComplexResampler  (src/dsp/Resampler.cpp)                            │
-│   Polyphase FIR   interpolate=3, decimate=25                         │
-│   1 000 000 Hz → 120 000 Hz                                          │
+│   Polyphase FIR   interpolate=12, decimate=125                       │
+│   1 000 000 Hz → 96 000 Hz                                           │
 └────────────────────────┬────────────────────────────────────────────┘
-                         │  120 kHz complex<float>
+                         │  96 kHz complex<float>
                          ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │ LowPassFilter  (src/dsp/LowPassFilter.cpp)                           │
@@ -38,7 +38,7 @@ The application is a standalone C++17 real-time DSP pipeline that:
 │   Cutoff: variable (2.5 kHz – 15 kHz, default 10 kHz)               │
 │   Transition band: 2 kHz                                             │
 └────────────────────────┬────────────────────────────────────────────┘
-                         │  120 kHz complex<float>
+                         │  96 kHz complex<float>
                          ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │ CQUAMDecoder  (src/dsp/CQUAMDecoder.cpp)                             │
@@ -48,14 +48,14 @@ The application is a standalone C++17 real-time DSP pipeline that:
 │   Stereo extraction: L+R = env·cos(γ)−1,  L−R = Q/cos(γ)           │
 │   Goertzel filter → 25 Hz pilot tone detection                       │
 │   Biquad IIR notch (selectable: 5/9/10 kHz or variable)             │
-│   Output: two float streams (L, R) at 120 kHz                        │
+│   Output: two float streams (L, R) at 96 kHz                         │
 └─────────┬──────────────────────────────────────────┬────────────────┘
           │ L channel                                 │ R channel
           ▼                                           ▼
 ┌──────────────────────────┐           ┌──────────────────────────┐
 │ FloatResampler (Left)    │           │ FloatResampler (Right)   │
-│ 120 kHz → 48 kHz         │           │ 120 kHz → 48 kHz         │
-│ interpolate=2, decimate=5│           │ interpolate=2, decimate=5│
+│ 96 kHz → 48 kHz          │           │ 96 kHz → 48 kHz          │
+│ interpolate=1, decimate=2│           │ interpolate=1, decimate=2│
 └──────────┬───────────────┘           └────────────┬─────────────┘
            │                                         │
            └─────────────────┬───────────────────────┘
@@ -89,8 +89,8 @@ This keeps latency minimal and avoids an additional queue.
 
 ### Polyphase Resampler
 A windowed-sinc prototype FIR is decomposed into L polyphase branches.
-For the 1 MHz → 120 kHz stage (interp=3, decim=25) this means:
-- 3 polyphase branches of 16 taps each
+For the 1 MHz → 96 kHz stage (interp=12, decim=125) this means:
+- 12 polyphase branches of 16 taps each
 - For each output sample: read new inputs as needed, apply one branch
 
 ### Biquad Notch Filter
@@ -110,10 +110,10 @@ The architecture is explicitly designed for a future hardware-native path:
 
 ```
 Current (Phase 1):
-  RTL-SDR @ 1 MHz  →  [FreqXlator + ComplexResampler]  →  120 kHz IF
+  RTL-SDR @ 1 MHz  →  [FreqXlator + ComplexResampler]  →  96 kHz IF
 
 Future (Phase 2 – RISC native):
-  Tayloe Detector + Stereo ADC @ 96/120 kHz  →  120 kHz IF  (drop-in)
+  Tayloe Detector + Stereo ADC @ 96 kHz  →  96 kHz IF  (drop-in)
 ```
 
 **To implement Phase 2:**

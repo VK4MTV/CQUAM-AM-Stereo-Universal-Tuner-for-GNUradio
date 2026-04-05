@@ -69,12 +69,12 @@ self.rational_resampler_xxx_0_0_0 = filter.rational_resampler_ccc(
 
 **C++:**
 ```cpp
-// Resampler.cpp  –  ComplexResampler(interp=3, decim=25)
-// Equivalent: interpolate=120, decimate=1000 → GCD(120,1000)=40 → 3/25
+// Resampler.cpp  –  ComplexResampler(interp=12, decim=125)
+// Equivalent: interpolate=12, decimate=125  (GCD(1000000,96000)=8000 → 12/125)
 ```
 
-GCD reduction: 120/1000 = 3/25. The polyphase decomposition uses 3 branches,
-each with 16 taps, giving a 48-tap prototype FIR.
+GCD reduction: 96000/1000000 → GCD=8000 → 12/125. The polyphase decomposition
+uses 12 branches, each with 16 taps, giving a 192-tap prototype FIR.
 
 ---
 
@@ -89,8 +89,8 @@ self.low_pass_filter_0 = filter.interp_fir_filter_ccf(
 **C++:**
 ```cpp
 // LowPassFilter.cpp – builds Hamming-windowed sinc FIR
-// Number of taps: 8 / (2000/120000) = 480 taps
-// Normalised cutoff: audio_bw / 120000
+// Number of taps: 8 / (2000/96000) = 384 taps
+// Normalised cutoff: audio_bw / 96000
 ```
 
 The `firdes.low_pass` gain of 3 in Python is compensated for by the resampler.
@@ -145,10 +145,12 @@ self.rational_resampler_xxx_0_0_0_0 = filter.rational_resampler_fff(
     interpolation=48, decimation=120, taps=[], fractional_bw=0)
 ```
 
-**C++:**
+**C++ (updated IF rate – 96 kHz):**
 ```cpp
-// FloatResampler(interp=2, decim=5)
-// GCD(48,120) = 24  →  48/24=2, 120/24=5
+// FloatResampler(interp=1, decim=2)
+// 96 000 / 48 000 = 2/1  →  GCD=48000  →  interp=1, decim=2
+// (The Python block targeted 48kHz from the original 120kHz IF;
+//  the C++ version targets 48kHz from the new 96kHz IF.)
 ```
 
 Two separate `FloatResampler` instances handle L and R independently,
