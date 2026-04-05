@@ -35,6 +35,8 @@ private slots:
     void onNotchModeChanged(int id);
     void onNotchFreqVChanged(int hz);
     void onMonoModeToggled(bool stereo);
+    void onRfGainChanged(int dB);
+    void onAudioGainChanged(int percent);
     void updateStatusIndicators();
     void onDeviceError(const QString& msg);
 
@@ -54,6 +56,10 @@ private:
     QSlider*       freqSlider_        = nullptr;
     QSlider*       audioBwSlider_     = nullptr;
     QLabel*        audioBwLabel_      = nullptr;
+    QSlider*       rfGainSlider_      = nullptr;  // SDR RF gain (0–49 dB)
+    QLabel*        rfGainLabel_       = nullptr;
+    QSlider*       audioGainSlider_   = nullptr;  // audio output gain (1–400 %)
+    QLabel*        audioGainLabel_    = nullptr;
     QButtonGroup*  notchGroup_        = nullptr;
     QSlider*       notchFreqVSlider_  = nullptr;
     QLabel*        notchFreqVLabel_   = nullptr;

@@ -37,6 +37,11 @@ void DSPPipeline::setMonoMode(bool mono)
     decoder_.setMonoMode(mono);
 }
 
+void DSPPipeline::setAudioGain(double gain)
+{
+    audioGain_ = static_cast<float>(gain);
+}
+
 void DSPPipeline::processIQ(const std::complex<float>* samples, std::size_t count)
 {
     // ── 1. Work on a local copy to allow frequency translation in-place ───────
@@ -89,8 +94,8 @@ void DSPPipeline::processIQ(const std::complex<float>* samples, std::size_t coun
         interleaved_.resize(frames * 2);
 
     for (std::size_t i = 0; i < frames; ++i) {
-        interleaved_[2 * i]     = lAudio_[i];
-        interleaved_[2 * i + 1] = rAudio_[i];
+        interleaved_[2 * i]     = lAudio_[i] * audioGain_;
+        interleaved_[2 * i + 1] = rAudio_[i] * audioGain_;
     }
 
     audioCallback_(interleaved_.data(), frames);

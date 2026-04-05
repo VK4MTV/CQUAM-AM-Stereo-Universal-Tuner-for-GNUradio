@@ -39,6 +39,7 @@ public:
     void setAudioBandwidth(double hz);
     void setNotchFreq(double hz);
     void setMonoMode(bool mono);
+    void setAudioGain(double gain);  // linear multiplier applied to audio output
 
     // ── Status ────────────────────────────────────────────────────────────────
     float lockLevel()       const { return decoder_.lockLevel(); }
@@ -73,4 +74,5 @@ private:
     std::vector<float> interleaved_;
 
     AudioCallback audioCallback_;
+    float         audioGain_ = 1.0f;  // linear audio output gain multiplier
 };
