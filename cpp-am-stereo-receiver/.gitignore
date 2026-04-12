@@ -1,0 +1,42 @@
+# Build artifacts
+build/
+cmake-build-*/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe
+am_stereo_receiver
+
+# CMake generated
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+CTestTestfile.cmake
+_CPack_Packages/
+
+# Qt
+*.autosave
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+*.qrc.depends
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Python cache (from repository root)
+__pycache__/
+*.pyc
+*.pyo
