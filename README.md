@@ -1,5 +1,7 @@
 # CQUAM-AM-Stereo-Universal-Tuner-for-GNUradio
 #############################################################################################
+Just did a merge that wasnt done, still getting familiar with Github, not sutr if it was the wrong one, if the frequency tuning is off by 200KHz, I just did the wring merge. otherwise you have the latest revision. I will check in the next day, stand by!
+
 a C++ INSTALLABLE STANDALONE HAS BEEN CREATED AND IS IN BETA TEST, YOU CAN TRY IT OUT AND FEEL
 FREE TO SEND YOUR FEEDBACK, INSTALLATION FOR LINUX, WINDOWS AND MAC ARE NOW HERE TO TRY OUT,
 NAVIGATE TO FIND THE INSTALLATION INSTRUCTIONS TO BUILD YOUR INSTALL.
