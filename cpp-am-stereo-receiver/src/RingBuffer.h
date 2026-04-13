@@ -4,13 +4,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 #include <atomic>
 #include <cstddef>
-#include <cassert>
+#include <cstring>
 
-template<typename T, std::size_t Capacity>
+template <typename T, std::size_t Capacity>
 class RingBuffer
 {
     static_assert((Capacity & (Capacity - 1)) == 0,
                   "Capacity must be a power of two");
+
 public:
     RingBuffer() : head_(0), tail_(0) {}
 
@@ -32,6 +33,19 @@ public:
         std::size_t pushed = 0;
         for (std::size_t i = 0; i < count; ++i) {
             if (!push(data[i])) break;
+            ++pushed;
+        }
+        return pushed;
+    }
+
+    // NEW: Producer: push ALL items, dropping oldest samples if necessary
+    std::size_t push_force(const T* data, std::size_t count)
+    {
+        std::size_t pushed = 0;
+        for (std::size_t i = 0; i < count; ++i) {
+            while (!push(data[i])) {
+                pop_dummy();            // drop oldest
+            }
             ++pushed;
         }
         return pushed;
@@ -72,4 +86,10 @@ private:
     T                   buf_[Capacity];
     std::atomic<std::size_t> head_;
     alignas(64) std::atomic<std::size_t> tail_;
+
+    void pop_dummy()
+    {
+        const std::size_t tail = tail_.load(std::memory_order_relaxed);
+        tail_.store((tail + 1) & (Capacity - 1), std::memory_order_release);
+    }
 };
