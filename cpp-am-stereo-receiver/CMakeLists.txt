@@ -1,7 +1,4 @@
 cmake_minimum_required(VERSION 3.16)
-project(AMStereoReceiver VERSION 1.0.2 LANGUAGES CXX)
-
-cmake_minimum_required(VERSION 3.16)
 project(CQUAM_AM_Stereo_Tuner LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -49,4 +46,4 @@ install(TARGETS CQUAM_AM_Stereo_Tuner
 
 message(STATUS "Project configured successfully!")
 message(STATUS "Executable name: CQUAM_AM_Stereo_Tuner")
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")"")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
