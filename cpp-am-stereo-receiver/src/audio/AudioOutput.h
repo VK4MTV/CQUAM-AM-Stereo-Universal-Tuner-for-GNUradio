@@ -7,6 +7,9 @@
 #include <mutex>
 #include <cstddef>
 #include "../RingBuffer.h"
+
+// ... existing includes ...
+
 class AudioOutput
 {
 public:
