@@ -2,6 +2,7 @@
 // AudioOutput.cpp  –  PortAudio stereo output at 48 kHz
 // ─────────────────────────────────────────────────────────────────────────────
 #include "AudioOutput.h"
+#include <portaudio.h>
 #include <iostream>
 #include <cstring>
 
@@ -22,7 +23,7 @@ bool AudioOutput::open()
 {
     if (stream_) return true;
 
-    PaStreamParameters outParams;
+    PaStreamParameters outParams{};
     outParams.device           = Pa_GetDefaultOutputDevice();
     if (outParams.device == paNoDevice) {
         std::cerr << "[Audio] No default output device found.\n";
@@ -35,11 +36,69 @@ bool AudioOutput::open()
 
     const PaError err = Pa_OpenStream(
         &stream_,
-        nullptr,        // no input
+        nullptr,
         &outParams,
         SAMPLE_RATE,
         FRAMES_PER_BUF,
         paClipOff,
+        paCallback,
+        this
+    );
+
+    if (err != paNoError) {
+        std::cerr << "[Audio] Pa_OpenStream failed: " << Pa_GetErrorText(err) << "\n";
+        stream_ = nullptr;
+        return false;
+    }
+
+    Pa_StartStream(stream_);
+    std::cout << "[Audio] PortAudio stream opened at " << SAMPLE_RATE << " Hz stereo.\n";
+    return true;
+}
+
+void AudioOutput::close()
+{
+    if (stream_) {
+        Pa_StopStream(stream_);
+        Pa_CloseStream(stream_);
+        stream_ = nullptr;
+    }
+}
+
+void AudioOutput::push(const float* interleaved, std::size_t frames)
+{
+    ring_.push_force(interleaved, frames * CHANNELS);   // <-- changed to force
+}
+
+int AudioOutput::paCallback(const void* /*input*/, void* output,
+                            unsigned long frameCount,
+                            const PaStreamCallbackTimeInfo* /*timeInfo*/,
+                            PaStreamCallbackFlags /*statusFlags*/,
+                            void* userData)
+{
+    auto* self = static_cast<AudioOutput*>(userData);
+    auto* out  = static_cast<float*>(output);
+    const std::size_t needed = frameCount * CHANNELS;
+
+    const std::size_t got = self->ring_.pop(out, needed);
+
+    if (got < needed) {
+        // Repeat last sample instead of silence → no pops
+        for (std::size_t i = got; i < needed; i += CHANNELS) {
+            out[i]     = self->lastSample_[0];
+            if (i + 1 < needed)
+                out[i + 1] = self->lastSample_[1];
+        }
+    }
+
+    // Update last sample whenever we actually got data
+    if (got >= 2) {
+        self->lastSample_[0] = out[got - 2];
+        self->lastSample_[1] = out[got - 1];
+    }
+
+    return paContinue;
+}
         paCallback,
         this
     );
