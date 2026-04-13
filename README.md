@@ -1,6 +1,7 @@
 # CQUAM-AM-Stereo-Universal-Tuner-for-GNUradio
 #############################################################################################
-Just did a merge that wasnt done, still getting familiar with Github, not sutr if it was the wrong one, if the frequency tuning is off by 200KHz, I just did the wring merge. otherwise you have the latest revision. I will check in the next day, stand by!
+All has been merged, still getting familiar with Github, there is a bug to iron out, check
+the update at the bottom of page
 
 a C++ INSTALLABLE STANDALONE HAS BEEN CREATED AND IS IN BETA TEST, YOU CAN TRY IT OUT AND FEEL
 FREE TO SEND YOUR FEEDBACK, INSTALLATION FOR LINUX, WINDOWS AND MAC ARE NOW HERE TO TRY OUT,
@@ -84,3 +85,5 @@ PROBLEMS STILL EXISTING BEFORE MOVING ON: issues are still existing with the pil
 so all is working now, have fun with it, dont use the flowgraph anympre for GNUradio, as the blocks I am trying to use is buggy and doesnt work for notch filter selection, plus its out of date.
 
 04/04/2026 UPDATE: More refinement on the epy_Block_5 AM Stereo core, more processor efficient, however now I have reached the limits of the Python code, will be moving the development to C code next, it all works well now, in this next C code version, it will become a standalone turnkey application with support for all SDR dongles, the aim is to ensure user friendliness where the user only needs to make sure the SDR is plugged in and set up and launch the application, my aim is it will just work, none of that configuration configs that will confuse the average joe. this is where development of an attractive user interface and more noise reduction features will be developed, the Notch filter already is the highlight feature of this radio as it stands, a feature that is very rare in AM radios.
+
+13/04/2026 UPDATE: All the repository pull requests has been merged now for the C++ version which is still a beta test version, many hours of soak testing for stability shows it is stable, has not crashed once, it is working as intended, but there is a minor bug that needs to be worked on before moving to next step, there seems to be a constant slight time shift in the audio, which gives a faint click and pop in the audio, that will be investigated and fixed before moving onto developing additional noise reduction.
