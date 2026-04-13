@@ -35,7 +35,7 @@ private:
 
     PaStream* stream_ = nullptr;
 
-    static constexpr std::size_t RING_FRAMES = 65536;  // you can bump to 262144 if you want ~5 s buffer
+    static constexpr std::size_t RING_FRAMES = 131072;  // you can bump to 262144 if you want ~5 s buffer
     RingBuffer<float, RING_FRAMES * CHANNELS> ring_;   // note: explicit template now matches
 
     // For smooth underrun handling
