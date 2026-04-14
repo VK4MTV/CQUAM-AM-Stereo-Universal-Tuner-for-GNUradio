@@ -1,5 +1,7 @@
 # CQUAM-AM-Stereo-Universal-Tuner-for-GNUradio
 #############################################################################################
+
+
 All has been merged, still getting familiar with Github, there is a bug to iron out, check
 the update at the bottom of page
 
@@ -29,7 +31,9 @@ The GUI interface will be replaces with a more visually appealing version when t
 the aim is to release windows, mac and linux versions and a lineup of standalone receivers and media centres with all the features that are often neglected, there will be no shortcuts by the end, the power of software has made possibilities endless without the hardware bulk of yesterdays implementations.
 
 #######################
+
 THE AIM OF THIS PROJECT
+
 #######################
 I want to help make CQUAM mainstream, Manufacturers can learn a lesson on this, Hardware is expensive, even more so in the past, but computer code gets really cheap and easy to implement especially if its mass deployed after development
 
@@ -48,7 +52,9 @@ FM on the other hand when it comes to channel occupation is extremely inefficien
 The biggest killer of AM radio happens to be how the channels have no guard bands at all like FM does, instead, the channel spacing is opposite, each channel overlaps each other with their allowed occupation space, this limitation is a result in two things, the limited slice of spectrum allocated, and history. This very closely coupled channel spacing is the cause of the biggest complaint of AM radio that often comes in at night when stations hundreds to thousands of K's away could be received, often you would have a station parked on one or either side on the next channel, 9KHz away, and there is where the most unbearable ear piercing high pitched tone comes screaming in, Bang on 9KHz, the older folk may not hear it, but the youth hears it and can often be driven crazy, this is where this CQUAM AM STEREO UNIVERSAL TUNER fixes this issue, apply Notch filter, high pitch noise GONE!
 
 ##################
+
 HISTORY
+
 ##################
 
 Another thing to understand is AM was the first method in how audio was transmitted, it began when Reginald Fessenden on Christmas Eve, December 24, 1906 surprised an audience of radio operators in the ships moored or out at sea with something they didnt expect, everyone was familiar with the raspy morse hash coming from their receivers which were sent by spark gap transmitters at the time, Reginald sent a message out for ships crew to listen in for something they have never heard before, he then moved away from the spark gap transmitter and fired up the pure sine wave carrier based AM transmitter and began to broadcast "O Holy Night" on the violin, reading a passage from the Bible (Luke Chapter 2), and playing Handel's "Largo" on an Ediphone phonograph.
@@ -56,14 +62,18 @@ Another thing to understand is AM was the first method in how audio was transmit
 This sparked a revolution, though there was no concept of guard bands back then, there was more to discover through mistakes that brought up better ideas, The full AM broadcast band was progressively established through the 1920's, and became established around 1927 to what we know to this day, What was set back then cannot be changed much 
 
 ####################
+
 TECHNICAL AGENDA
+
 ####################
 
 This project will be tackling every complaint about AM radio, the worst part first is co channel interference, instead of narrowing the capture to filter out co channel interference which in turn throws out a lot of audio information, we instead do it properly: apply very precise notch filtering with cancelling techniques that do not compromise audio fidelity, next is to develop T filtering, high end AM Stereo tuners offered a rare feature where high amplitude pulses received such as static or lightning crashes triggered a blanking circuit, preventing these pulses reaching your speakers or headphones, software implementation in this case will have more sophisticated approaches to tackle this interference, other types of interference such as whats generated from Switch Mode power supplies would be a very difficult one to cancel out without compromising fidelity substantially, this is where the limits are reached, the user will need to rectify this and replace offending power supplies with better quality quiet ones, thankfully these days are over since an eforcement strategy was placed on imports arount year 2015, its now only a matter of time people replace these power supplies along with the associated appliances as usual.
 
 
 ###########################
+
 WHY SOFTWARE DEFINED RADIO?
+
 ###########################
 
 Because with software defined radio, you are not stuck with the limits of Analog solutions where once built, it cannot be changed and modified easily, adding features in the desigh of an analog design adds to the expense of the production unit, and the most expensive full featured radio would be packed full of components and still only offer two bandwidth options for example, in comparison, a DSP radio that fits in the palm of your hand can offer all band coverage, AM, FM SSB, and six selectable bandwidths, break it open and you will find hardly anything except about four chips, maybe just a couple of inductors, not much more, and thats all, something made in the pre DSP days such as the late 1990's and earlier would not be offering as many decoding and filtering features, you crack that open to find it packed full of resonator circuits.
