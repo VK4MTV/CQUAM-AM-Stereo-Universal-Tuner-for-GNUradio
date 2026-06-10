@@ -102,3 +102,6 @@ UPDATE ON SAME EVENING: Further revising the code to fix the random clicks and p
 
 I an now testing the latest Beta, not yet released onto here and will spend some time tweaking for the next release. Going to bed, goodnight all you cats :)
 
+11/05/2026 More bug fixes, now should be installable on at least both Windows and Linux systems, Now has proper automatic pilot detection, with selected force stereo and force mono option. Code has now been ported to take advantage of floating point for hardware accelleration, so now the core is now embedded ready for the agenda to run on cheap ESP32 series processors, Also there is now another input option, if there is no SDR dongle detected, the tuner will automatically use the audio in on your sound card with a 96KHZ sampling rate, where the tuner becomes simply a high quality CQUAM decoder, tuning would be done externally on whatever device you set up as a frontend.
+
+Cheers, have fun, let me know how you go. :)
