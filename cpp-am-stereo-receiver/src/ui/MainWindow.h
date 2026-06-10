@@ -57,7 +57,9 @@ private:
     QButtonGroup*  notchGroup_        = nullptr;
     QSlider*       notchFreqVSlider_  = nullptr;
     QLabel*        notchFreqVLabel_   = nullptr;
-    QCheckBox*     stereoCheckBox_    = nullptr;
+    QRadioButton*  rbAuto_            = nullptr;
+    QRadioButton*  rbForceStereo_     = nullptr;
+    QRadioButton*  rbForceMono_       = nullptr;
 
     // LED indicators (drawn as coloured QLabels)
     QLabel*        pilotLed_          = nullptr;

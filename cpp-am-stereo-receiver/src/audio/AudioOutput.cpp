@@ -83,18 +83,31 @@ int AudioOutput::paCallback(const void* /*input*/, void* output,
     const std::size_t got = self->ring_.pop(out, needed);
 
     if (got < needed) {
-        // Repeat last sample instead of silence → no pops
+        // Hold last valid sample during underrun (prevents clicks)
         for (std::size_t i = got; i < needed; i += CHANNELS) {
             out[i]     = self->lastSample_[0];
             if (i + 1 < needed)
                 out[i + 1] = self->lastSample_[1];
         }
+        // Mark that we are in an underrun state so we can fade back in
+        self->inUnderRun_ = true;
     }
 
-    // Update last sample whenever we actually got data
-    if (got >= 2) {
-        self->lastSample_[0] = out[got - 2];
-        self->lastSample_[1] = out[got - 1];
+    // Update lastSample_ from the most recent valid data we wrote
+    if (needed >= 2) {
+        self->lastSample_[0] = out[needed - 2];
+        self->lastSample_[1] = out[needed - 1];
+    }
+
+    // Gentle linear fade-in after recovering from underrun (first 64 samples)
+    if (self->inUnderRun_ && got == needed) {
+        constexpr int fadeLen = 64;
+        for (int i = 0; i < fadeLen && i < static_cast<int>(frameCount); ++i) {
+            const float g = static_cast<float>(i) / fadeLen;
+            out[i*2]     *= g;
+            out[i*2 + 1] *= g;
+        }
+        self->inUnderRun_ = false;
     }
 
     return paContinue;

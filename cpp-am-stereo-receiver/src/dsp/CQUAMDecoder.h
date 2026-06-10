@@ -30,9 +30,12 @@ public:
                  float* lOut, float* rOut,
                  std::size_t n);
 
+        // Stereo mode
+    enum class StereoMode { Auto, ForceStereo, ForceMono };
+
     // Parameter setters (thread-safe via mutex)
     void setNotchFreq(double hz);
-    void setMonoMode(bool mono);
+    void setStereoMode(StereoMode mode);
     void setSampleRate(double hz);
 
     // Status getters (updated after each process() call)

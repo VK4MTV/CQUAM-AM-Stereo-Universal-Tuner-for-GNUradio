@@ -40,7 +40,7 @@ public:
     void setFrequency(double /*hz*/) {} // handled at SDR level; pipeline is offset-based
     void setAudioBandwidth(double hz);
     void setNotchFreq(double hz);
-    void setMonoMode(bool mono);
+    void setStereoMode(CQUAMDecoder::StereoMode mode);
     void setAudioGain(double gain);  // linear multiplier applied to audio output
 
     // ── Status ────────────────────────────────────────────────────────────────

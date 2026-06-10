@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(CQUAM_AM_Stereo_Tuner LANGUAGES CXX)
+project(am_stereo_receiver LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,32 +10,45 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-# Qt6
+# --- Required packages --------------------------------------------------------
 find_package(Qt6 COMPONENTS Core Widgets REQUIRED)
+find_package(SoapySDR REQUIRED)
+find_package(Threads REQUIRED)
 
-# PortAudio via pkg-config (reliable on Raspberry Pi OS)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(PORTAUDIO REQUIRED portaudio-2.0)
+# PortAudio (try CMake config first, fall back to pkg-config)
+find_package(PortAudio QUIET)
+if(NOT PortAudio_FOUND)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(PORTAUDIO REQUIRED portaudio-2.0)
+endif()
 
-# Collect all .cpp files
+# --- Sources ------------------------------------------------------------------
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
-add_executable(CQUAM_AM_Stereo_Tuner ${SOURCES})
+add_executable(am_stereo_receiver ${SOURCES})
 
-target_include_directories(CQUAM_AM_Stereo_Tuner PRIVATE
+target_include_directories(am_stereo_receiver PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${PORTAUDIO_INCLUDE_DIRS}
 )
 
-target_link_libraries(CQUAM_AM_Stereo_Tuner PRIVATE
+if(PortAudio_FOUND AND TARGET PortAudio::PortAudio)
+    set(PORTAUDIO_TARGET PortAudio::PortAudio)
+else()
+    set(PORTAUDIO_TARGET ${PORTAUDIO_LIBRARIES})
+    target_include_directories(am_stereo_receiver PRIVATE ${PORTAUDIO_INCLUDE_DIRS})
+endif()
+
+target_link_libraries(am_stereo_receiver PRIVATE
     Qt6::Core
     Qt6::Widgets
-    ${PORTAUDIO_LIBRARIES}
     SoapySDR
     Threads::Threads
+    ${PORTAUDIO_TARGET}
 )
 
+# --- Status messages ----------------------------------------------------------
 message(STATUS "✅ Configured successfully!")
-message(STATUS "Executable   : CQUAM_AM_Stereo_Tuner")
+message(STATUS "Executable   : am_stereo_receiver")
 message(STATUS "Qt6          : ${Qt6_FOUND}")
-message(STATUS "PortAudio    : ${PORTAUDIO_LIBRARIES}")
+message(STATUS "SoapySDR     : ${SoapySDR_FOUND}")
+message(STATUS "PortAudio    : ${PORTAUDIO_TARGET}")

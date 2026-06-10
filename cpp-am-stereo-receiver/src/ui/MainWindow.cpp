@@ -126,15 +126,29 @@ void MainWindow::buildUI()
         lay->addWidget(freqSpinBox_);
         lay->addWidget(freqSlider_);
         mainLayout->addWidget(grp);
-    }
+        }
 
-    // ── Stereo / Mono ─────────────────────────────────────────────────────────
+    // ── Stereo Mode (Auto / Force Stereo / Force Mono) ───────────────────────────────────────────
     {
-        stereoCheckBox_ = new QCheckBox("Stereo Mode (uncheck for Mono)", this);
-        stereoCheckBox_->setChecked(true);
-        connect(stereoCheckBox_, &QCheckBox::toggled,
-                this, &MainWindow::onMonoModeToggled);
-        mainLayout->addWidget(stereoCheckBox_);
+        auto* grp = new QGroupBox("Stereo Mode", this);
+        auto* lay = new QHBoxLayout(grp);
+
+        rbAuto_        = new QRadioButton("Auto", this);
+        rbForceStereo_ = new QRadioButton("Force Stereo", this);
+        rbForceMono_   = new QRadioButton("Force Mono", this);
+
+        lay->addWidget(rbAuto_);
+        lay->addWidget(rbForceStereo_);
+        lay->addWidget(rbForceMono_);
+
+        // Default to Auto
+        rbAuto_->setChecked(true);
+
+        connect(rbAuto_,        &QRadioButton::toggled, this, [this](bool on){ if (on) dsp_.setStereoMode(CQUAMDecoder::StereoMode::Auto); });
+        connect(rbForceStereo_, &QRadioButton::toggled, this, [this](bool on){ if (on) dsp_.setStereoMode(CQUAMDecoder::StereoMode::ForceStereo); });
+        connect(rbForceMono_,   &QRadioButton::toggled, this, [this](bool on){ if (on) dsp_.setStereoMode(CQUAMDecoder::StereoMode::ForceMono); });
+
+        mainLayout->addWidget(grp);
     }
 
     // ── Notch filter ─────────────────────────────────────────────────────────
@@ -305,10 +319,7 @@ void MainWindow::onNotchFreqVChanged(int hz)
         dsp_.setNotchFreq(static_cast<double>(hz));
 }
 
-void MainWindow::onMonoModeToggled(bool stereo)
-{
-    dsp_.setMonoMode(!stereo);
-}
+
 
 // ── Status update (100 ms timer) ─────────────────────────────────────────────
 void MainWindow::updateStatusIndicators()

@@ -37,12 +37,12 @@ static void computeNotchCoeffs(double f0, double Q, double fs,
 }
 
 // ── Constructor ───────────────────────────────────────────────────────────────
-CQUAMDecoder::CQUAMDecoder(double sampleRate, double notchFreq, double notchQ, bool monoMode)
+CQUAMDecoder::CQUAMDecoder(double sampleRate, double notchFreq, double notchQ, bool /*legacyMono*/)
     : fs_(sampleRate)
     , notchFreq_(notchFreq)
     , notchQ_(notchQ)
     , w1L_(0), w2L_(0), w1R_(0), w2R_(0)
-    , monoMode_(monoMode)
+    , stereoMode_(StereoMode::Auto)
 {
     updatePLLGains();
     updateNotchCoeffs();
@@ -77,10 +77,10 @@ void CQUAMDecoder::setNotchFreq(double hz)
     }
 }
 
-void CQUAMDecoder::setMonoMode(bool mono)
+void CQUAMDecoder::setStereoMode(StereoMode mode)
 {
     std::lock_guard<std::mutex> lk(paramMutex_);
-    monoMode_ = mono;
+    stereoMode_ = mode;
 }
 
 void CQUAMDecoder::setSampleRate(double hz)
@@ -99,15 +99,15 @@ void CQUAMDecoder::process(const std::complex<float>* in,
 {
     // Take parameter snapshot under lock (cheap copy)
     double alpha, beta, gCoeff, nb0, nb1, nb2, na1, na2;
-    bool   monoMode;
+        StereoMode stereoMode;
     {
         std::lock_guard<std::mutex> lk(paramMutex_);
-        alpha    = alpha_;
-        beta     = beta_;
-        gCoeff   = gCoeff_;
-        nb0      = nb0_; nb1 = nb1_; nb2 = nb2_;
-        na1      = na1_; na2 = na2_;
-        monoMode = monoMode_;
+        alpha      = alpha_;
+        beta       = beta_;
+        gCoeff     = gCoeff_;
+        nb0        = nb0_; nb1 = nb1_; nb2 = nb2_;
+        na1        = na1_; na2 = na2_;
+        stereoMode = stereoMode_;
     }
 
     // Working state (local for speed)
@@ -189,11 +189,15 @@ void CQUAMDecoder::process(const std::complex<float>* in,
     const float  prev  = pilotMag_.load(std::memory_order_relaxed);
     pilotMag_.store(0.9f * prev + 0.1f * static_cast<float>(mag), std::memory_order_relaxed);
 
-    // Mono fold-down
-    if (monoMode) {
-        for (std::size_t i = 0; i < n; ++i) {
-            const float m = 0.5f * (lOut[i] + rOut[i]);
-            lOut[i] = rOut[i] = m;
+        // Stereo mode handling (decide once per block)
+        const bool wantMono = (stereoMode == StereoMode::ForceMono) ||
+                              (stereoMode == StereoMode::Auto && !pilotDetected());
+
+        if (wantMono) {
+            for (std::size_t i = 0; i < n; ++i) {
+                const float m = 0.5f * (lOut[i] + rOut[i]);
+                lOut[i] = rOut[i] = m;
+            }
         }
-    }
-}
+        // ForceStereo: keep decoded stereo
+
