@@ -34,7 +34,6 @@ private slots:
     void onAudioBwChanged(int hz);
     void onNotchModeChanged(int id);
     void onNotchFreqVChanged(int hz);
-    void onMonoModeToggled(bool stereo);
     void updateStatusIndicators();
     void onDeviceError(const QString& msg);
 

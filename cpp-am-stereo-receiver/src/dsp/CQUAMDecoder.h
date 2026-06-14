@@ -51,31 +51,34 @@ private:
     void updateNotchCoeffs();
 
     // --- PLL state ---
-    double fs_;
-    double zeta_  = 0.707;
-    double omegaN_ = 100.0;
-    double alpha_ = 0.0, beta_ = 0.0;
+    float fs_;
+    float zeta_  = 0.707f;
+    float omegaN_ = 100.0f;
+    float alpha_ = 0.0f, beta_ = 0.0f;
 
-    double  phz_     = 0.0;
-    double  omega2_  = 0.0;
-    double  cosGamma_= 1.0;
-    std::complex<double> vco_{ 1.0, 0.0 };
+    float  phz_     = 0.0f;
+    float  omega2_  = 0.0f;
+    float  cosGamma_= 1.0f;
+    std::complex<float> vco_{ 1.0f, 0.0f };
 
     // --- Goertzel 25 Hz pilot ---
-    double gCoeff_ = 0.0;
-    double gS1_    = 0.0;
-    double gS2_    = 0.0;
+    float gCoeff_ = 0.0f;
+    float gS1_    = 0.0f;
+    float gS2_    = 0.0f;
 
     // --- Notch filter (biquad, transposed direct form II) ---
-    double notchFreq_;
-    double notchQ_;
-    double nb0_, nb1_, nb2_;
-    double na1_, na2_;
-    double w1L_, w2L_;
-    double w1R_, w2R_;
+    float notchFreq_;
+    float notchQ_;
+    float nb0_, nb1_, nb2_;
+    float na1_, na2_;
+    float w1L_, w2L_;
+    float w1R_, w2R_;
+
+    // --- DC blocker for Goertzel input (prevents state accumulation) ---
+    float dcState_ = 0.0f;
 
     // --- Mode ---
-    bool monoMode_;
+    StereoMode stereoMode_ = StereoMode::Auto;
 
     // --- Status (updated atomically) ---
     std::atomic<float> lockLevel_{ 0.f };

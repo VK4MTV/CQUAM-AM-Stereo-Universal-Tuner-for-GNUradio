@@ -15,7 +15,7 @@ class AudioOutput
 public:
     static constexpr int    SAMPLE_RATE  = 48'000;
     static constexpr int    CHANNELS     = 2;
-    static constexpr int    FRAMES_PER_BUF = 512;
+    static constexpr int    FRAMES_PER_BUF = 2048;  // Increased from 512 for DSP spike tolerance
 
     AudioOutput();
     ~AudioOutput();
@@ -35,10 +35,24 @@ private:
 
     PaStream* stream_ = nullptr;
 
-    static constexpr std::size_t RING_FRAMES = 131072;  // you can bump to 262144 if you want ~5 s buffer
+    // Very large buffer (~22s) to make corrections very infrequent
+    // Correction happens ~once every 4 minutes, tick is barely noticeable
+    static constexpr std::size_t RING_FRAMES = 1048576;  // 1M frames * 2ch = 2M samples (~22s)
     RingBuffer<float, RING_FRAMES * CHANNELS> ring_;   // note: explicit template now matches
 
-        // For smooth underrun handling
+    bool primed_ = false;  // true once buffer reaches 25% fill for first time
+
+    // Correction threshold: correct only when buffer > 75%
+    // With 22s buffer, this gives plenty of headroom
+    static constexpr std::size_t CORRECTION_THRESHOLD = RING_FRAMES * 3 / 4;  // 75%
+
+    // For smooth underrun handling
     float lastSample_[2] = {0.0f, 0.0f};
     bool  inUnderRun_    = false;
+
+    // --- Diagnostic counters ---
+    std::size_t underrunCount_      = 0;
+    std::size_t totalFramesWritten_ = 0;
+    std::size_t totalFramesRead_    = 0;
+    std::size_t lastReportTime_     = 0;   // simple frame-based reporting
 };

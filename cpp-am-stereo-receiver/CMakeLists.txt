@@ -24,6 +24,10 @@ endif()
 
 # --- Sources ------------------------------------------------------------------
 file(GLOB_RECURSE SOURCES "src/*.cpp")
+# Add NoiseBlanker explicitly
+list(APPEND SOURCES
+    src/dsp/NoiseBlanker.cpp
+)
 
 add_executable(am_stereo_receiver ${SOURCES})
 
@@ -44,6 +48,7 @@ target_link_libraries(am_stereo_receiver PRIVATE
     SoapySDR
     Threads::Threads
     ${PORTAUDIO_TARGET}
+    soxr
 )
 
 # --- Status messages ----------------------------------------------------------

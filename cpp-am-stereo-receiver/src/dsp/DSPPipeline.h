@@ -22,6 +22,7 @@
 #include "RmsAgc.h"
 #include "LowPassFilter.h"
 #include "CQUAMDecoder.h"
+#include "NoiseBlanker.h"
 
 class DSPPipeline
 {
@@ -69,6 +70,8 @@ private:
     CQUAMDecoder    decoder_;       // C-QUAM stereo decode
     FloatResampler  resamplerL_;    // 96 kHz → 48 kHz (left)
     FloatResampler  resamplerR_;    // 96 kHz → 48 kHz (right)
+
+    NoiseBlanker    noiseBlanker_;  // Impulse blanker (post-LPF, pre-decoder)
 
     // Intermediate buffers
     std::vector<std::complex<float>> ifBuf_;

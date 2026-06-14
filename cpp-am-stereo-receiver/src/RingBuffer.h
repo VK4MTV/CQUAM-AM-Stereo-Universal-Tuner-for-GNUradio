@@ -5,6 +5,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstring>
+#include <vector>
 
 template <typename T, std::size_t Capacity>
 class RingBuffer
@@ -13,7 +14,7 @@ class RingBuffer
                   "Capacity must be a power of two");
 
 public:
-    RingBuffer() : head_(0), tail_(0) {}
+    RingBuffer() : buf_(Capacity), head_(0), tail_(0) {}
 
     // Producer: returns false if full
     bool push(const T& item)
@@ -83,7 +84,7 @@ public:
     bool empty() const { return head_.load() == tail_.load(); }
 
 private:
-    T                   buf_[Capacity];
+    std::vector<T>           buf_;
     std::atomic<std::size_t> head_;
     alignas(64) std::atomic<std::size_t> tail_;
 

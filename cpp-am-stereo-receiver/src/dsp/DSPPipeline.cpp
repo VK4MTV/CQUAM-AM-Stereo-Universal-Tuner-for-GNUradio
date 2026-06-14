@@ -33,9 +33,9 @@ void DSPPipeline::setNotchFreq(double hz)
     decoder_.setNotchFreq(hz);
 }
 
-void DSPPipeline::setMonoMode(bool mono)
+void DSPPipeline::setStereoMode(CQUAMDecoder::StereoMode mode)
 {
-    decoder_.setMonoMode(mono);
+    decoder_.setStereoMode(mode);
 }
 
 void DSPPipeline::setAudioGain(double gain)
@@ -71,6 +71,9 @@ void DSPPipeline::processIQ(const std::complex<float>* samples, std::size_t coun
 
     // ── 5. Low-pass filter (audio bandwidth shaping) ─────────────────────────
     lpf_.process(ifOut.data(), ifCount);
+
+    // ── 5b. Noise blanker (removes lightning/ignition/static before decoder) ───
+    noiseBlanker_.process(ifOut.data(), ifCount);
 
     // ── 6. C-QUAM decoder → L and R float channels ───────────────────────────
     if (ifCount > lBuf_.size()) {

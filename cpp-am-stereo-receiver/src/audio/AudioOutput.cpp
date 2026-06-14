@@ -5,6 +5,8 @@
 #include <portaudio.h>
 #include <iostream>
 #include <cstring>
+#include <thread>
+#include <chrono>
 
 AudioOutput::AudioOutput()
 {
@@ -52,7 +54,13 @@ bool AudioOutput::open()
     }
 
     Pa_StartStream(stream_);
+    const auto* info = Pa_GetStreamInfo(stream_);
     std::cout << "[Audio] PortAudio stream opened at " << SAMPLE_RATE << " Hz stereo.\n";
+    if (info) {
+        std::cout << "[Audio][DIAG] InputLatency=" << info->inputLatency
+                  << "s OutputLatency=" << info->outputLatency << "s\n";
+    }
+    std::cout << "[Audio][DIAG] RingBuffer capacity: " << (RING_FRAMES * CHANNELS) << " samples\n";
     return true;
 }
 
@@ -80,7 +88,29 @@ int AudioOutput::paCallback(const void* /*input*/, void* output,
     auto* out  = static_cast<float*>(output);
     const std::size_t needed = frameCount * CHANNELS;
 
-    const std::size_t got = self->ring_.pop(out, needed);
+    // --- Priming: Wait until buffer reaches 25% before outputting real audio ---
+    if (!self->primed_) {
+        if (self->ring_.size() >= (RING_FRAMES / 4 * CHANNELS)) {
+            self->primed_ = true;
+            std::cout << "[Audio] Buffer primed at 25%, starting audio output.\n";
+        } else {
+            // Output silence while waiting for buffer to fill
+            std::memset(out, 0, needed * sizeof(float));
+            return paContinue;
+        }
+    }
+
+    std::size_t got = self->ring_.pop(out, needed);
+
+    // --- Simple rate regulation: correct when buffer > 50% ---
+    // Large buffer (5.5s) + infrequent correction = minimal audible artifacts
+    const std::size_t postPopFill = self->ring_.size();
+
+    if (postPopFill > (self->CORRECTION_THRESHOLD * CHANNELS) && got >= CHANNELS * 64) {
+        // Buffer > 75% - drop 32 stereo pairs (64 samples) to catch drift
+        // With 22s buffer at 75% threshold, this correction happens ~once every 4 minutes
+        got -= CHANNELS * 64;
+    }
 
     if (got < needed) {
         // Hold last valid sample during underrun (prevents clicks)
@@ -91,6 +121,13 @@ int AudioOutput::paCallback(const void* /*input*/, void* output,
         }
         // Mark that we are in an underrun state so we can fade back in
         self->inUnderRun_ = true;
+
+        // --- DIAGNOSTIC: Log underrun ---
+        ++self->underrunCount_;
+        if (self->underrunCount_ <= 10 || (self->underrunCount_ % 100) == 0) {
+            std::cerr << "[Audio][GLITCH] Underrun #" << self->underrunCount_
+                      << " (needed=" << needed << ", got=" << got << ")\n";
+        }
     }
 
     // Update lastSample_ from the most recent valid data we wrote
@@ -108,6 +145,18 @@ int AudioOutput::paCallback(const void* /*input*/, void* output,
             out[i*2 + 1] *= g;
         }
         self->inUnderRun_ = false;
+    }
+
+    // --- DIAGNOSTIC: Update counters ---
+    self->totalFramesRead_    += (got / CHANNELS);
+
+    // Periodic status report every ~5 seconds
+    constexpr std::size_t REPORT_INTERVAL = 240000;
+    if ((self->totalFramesRead_ / REPORT_INTERVAL) != (self->lastReportTime_ / REPORT_INTERVAL)) {
+        self->lastReportTime_ = self->totalFramesRead_;
+        const int fillPct = static_cast<int>(self->ring_.size() * 100 / (RING_FRAMES * CHANNELS));
+        std::cout << "[Audio][STATS] Underruns: " << self->underrunCount_
+                  << " | Buffer: " << fillPct << "% (target 20-40%, correcting >35%)\n";
     }
 
     return paContinue;
