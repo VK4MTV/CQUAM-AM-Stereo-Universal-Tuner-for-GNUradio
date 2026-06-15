@@ -1,13 +1,41 @@
 # CQUAM-AM-Stereo-Universal-Tuner-for-GNUradio
 #############################################################################################
 
+SHOULD BE INSTALLABLE ACROSS 3 PLATFORMS, WINDOWS, LINUX AND MAC, LINUX VERSION HAS BEEN
+TESTED ON THIS END, OTHER PLATFORMS YET TO BE TESTED BUT GET IN TOUCH IF YOU HAVE TROUBLES
+AS THIS IS STILL IN BETA TEST.
 
-All has been merged, still getting familiar with Github, there is a bug to iron out, check
-the update at the bottom of page
+FURTHER ADDITIONS AND BUG FIXES, THERE IS NOW A LOOK AHEAD NOISE BLANKER TO CUT OUT STATIC
+ADDED TO THE LATEST COMMIT, THIS FEATURE IS AUTOMATIC SO CANNOT BE TURNED OFF BY USER.
 
-a C++ INSTALLABLE STANDALONE HAS BEEN CREATED AND IS IN BETA TEST, YOU CAN TRY IT OUT AND FEEL
-FREE TO SEND YOUR FEEDBACK, INSTALLATION FOR LINUX, WINDOWS AND MAC ARE NOW HERE TO TRY OUT,
-NAVIGATE TO FIND THE INSTALLATION INSTRUCTIONS TO BUILD YOUR INSTALL.
+NOISE REDUCTION/ELIMINATION FEATURES THAT ADDRESSES THE BIGGEST COMPLAINTS IN AM RADIO,
+DONE PROPERLY WITHOUT SACRIFICING AUDIO FIDELITY:
+1. NOTCH FILTERING: this addresses the high pitched adjacent channel squeals, selectable
+   as 5KHz(shortwave) 9KHz(global AM Broadcast) 10KHz(USA AM broadcast) and variable.
+   There is consideration in removing variable and instead toggling it on/off next
+2. IMPULSE GATING: This filter stays on and sits before the decoder in the pipeline
+   ready to wipe out these spikes in the RF domain, then interpolate to the end of the
+   spike, leaving a clean signal into the decoder. This is the best approach because
+   it avoids distortion in the decoder that corrupts the decoded audio.
+   Other approaches of cleaning up static cleans up in the audio path which doesnt work
+   as good, since these high level spikes in a microsecond time domain turn into larger
+   pops in the decoder or envelope detector cannot be cleaned up without losing audio
+   detail.
+3. ANOTHER NOISE REDUCTION FEATURE CONSIDERED: Feature will processed in the RF domain
+   before the detector. Addressing Fluoro's, switchmode power supplies, neighbors TV.
+   This will address various interference, where a predictable continuous noise is
+   automatically sampled and analysed then a copy of this signal is applied against
+   the interference 180 degrees out of phase cancelling it out leaving you to enjoy
+   clean audio (hopefully).
+4. AHEAD IN THE DEVELOPMENT PIPELINE:
+   An appealing user interface along with station memory and direct
+   frequency entry keypad, addition of SSB and FM modes, including FM stereo broadcast
+   the development of the AM Stereo core is to to address the obvious problem, the lack
+   of a user friendly turnkey AM Stereo tuner, so make one then throw in the other modes
+   to make a complete tuner that serves everyones needs without compromise. later
+   there will be a standalone unit to be DIY'ed, another repository will be created
+   for this new standalone receiver.
+   
 
 THE APPLICATION SHOULD BE TURNKEY ONCE INSTALLED, NO NEED TO CONFIGURE ANYTHING, READY TO GO 
 LIKE YOU UNBOXED YOUR NEW RADIO FROM THE STORE, 
