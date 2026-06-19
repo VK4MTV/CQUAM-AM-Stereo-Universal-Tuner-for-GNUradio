@@ -43,6 +43,12 @@ private:
     void startRadio();
     void stopRadio();
 
+    // Persist/restore the user's last tuner settings (frequency, notch,
+    // bandwidth, stereo mode) via QSettings so the receiver reopens where it
+    // was left, instead of always reverting to the built-in defaults.
+    void loadSettings();
+    void saveSettings();
+
     // ── SDR + DSP + Audio ─────────────────────────────────────────────────────
     SDRDeviceManager   sdr_;
     DSPPipeline        dsp_;
