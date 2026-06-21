@@ -1,11 +1,12 @@
 # CQUAM-AM-Stereo-Universal-Tuner-for-GNUradio
 #############################################################################################
 
-# A REVISION IS BEING DONE TO ADDRESS THE ISSUES WITH CLOCK DRIFT IN MY EXTREMELY CHEAP AND NASTY GENERIC RTL-SDR, AN SQXR RESAMPLER CONSTANT UPDATER IS BEING IMPLEMENTED, BUT I AM CURRENTLY FIGHTING A BUG IN CMAKE THAT SEEMS TO RRFUSE TO PUT THE SQRRESAMPLER INTO VR MODE, EVERY CMAKE AND BUILD ATTEMPT KEEPS IMPLEMENTING HQ STEREO MODE INSTEAD OF VR MODE, AT THE MOMENT THE NASTY GLITCHES HAS BEEN REDUCED BUT THE CLOCK DRIFT IN THE SDR HAS NOT YET BEEN RESOLVED, THIS IS SO FAR BEEN A WHOLE NIGHT FIGHTING THIS REFUSAL OF IMPLEMENTING CLOCK UPDATES, (I will try and figure out where the bug is, the code as it stands is correct but maybe rhe driver library has issues, I am onto this, trying to get the best performance out if all SDR dongles cheap and nasty or top of the line, because I know there are people who dont want to let alone can afford to spend much more than $50 on an SDR Dongle, and an AirSpy the ideal SDR to use is at least three times the price)
 
 SHOULD BE INSTALLABLE ACROSS 3 PLATFORMS, WINDOWS, LINUX AND MAC, LINUX VERSION HAS BEEN
 TESTED ON THIS END, OTHER PLATFORMS YET TO BE TESTED BUT GET IN TOUCH IF YOU HAVE TROUBLES
 AS THIS IS STILL IN BETA TEST.
+
+THHERE IS NEW WORK TO ADDRESS THE GLITCH, what it is, its my very cheap RTL SDR with its basic crystal clock having clock drift issues, which is typical of cheal SDR's, the V4 is much better, however I will really need to fix this so that anyone can experience stable audio from even the cheapest dongle, but on my end I am having a glitch with either cmake or the time synch driver, so although its cleaned up a bit now, I facing the issue of the sound output refusing to go into VR mode, its stuck in HQ mode despite the code implementing it.
 
 
 THERE IS ANOTHER MODE ADDED WHERE IF THERE IS NO SDR DEVICE DETECTED, THE APPLICATION WILL RESORT
