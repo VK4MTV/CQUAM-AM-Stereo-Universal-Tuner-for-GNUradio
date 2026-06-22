@@ -18,6 +18,7 @@
 #include <QFont>
 #include <QFrame>
 #include <QSizePolicy>
+#include <QSettings>
 #include <iostream>
 
 // ── LED helper ────────────────────────────────────────────────────────────────
@@ -61,6 +62,11 @@ MainWindow::MainWindow(QWidget* parent)
     setMinimumWidth(480);
 
     buildUI();
+
+    // Restore the last-used tuner settings into the controls before the radio
+    // starts, so startRadio() picks up the saved frequency rather than the
+    // built-in default.
+    loadSettings();
 
     // Status update timer (100 ms)
     statusTimer_ = new QTimer(this);
@@ -340,6 +346,56 @@ void MainWindow::onDeviceError(const QString& msg)
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
+    saveSettings();
     stopRadio();
     event->accept();
+}
+
+// ── Settings persistence ──────────────────────────────────────────────────────
+// Stored via QSettings under the organisation/application names set in main.cpp,
+// so on Linux this lands in ~/.config/TropicalRadioNetwork/AM Stereo Receiver.conf.
+// Defaults match the previous hard-coded values, so a first run behaves exactly
+// as before.
+void MainWindow::loadSettings()
+{
+    QSettings s;
+    s.beginGroup("radio");
+
+    freqSpinBox_->setValue(s.value("frequency_khz", 7390).toInt());
+    audioBwSlider_->setValue(s.value("audio_bw_hz", 10000).toInt());
+    notchFreqVSlider_->setValue(s.value("notch_var_hz", 5000).toInt());
+
+    // QButtonGroup::idClicked only fires on user clicks, not setChecked(), so
+    // apply the restored notch mode to the DSP explicitly.
+    const int notchMode = s.value("notch_mode", 2).toInt();
+    if (auto* btn = notchGroup_->button(notchMode))
+        btn->setChecked(true);
+    onNotchModeChanged(notchMode);
+
+    const QString stereo = s.value("stereo_mode", "auto").toString();
+    if (stereo == "stereo")
+        rbForceStereo_->setChecked(true);
+    else if (stereo == "mono")
+        rbForceMono_->setChecked(true);
+    else
+        rbAuto_->setChecked(true);
+
+    s.endGroup();
+}
+
+void MainWindow::saveSettings()
+{
+    QSettings s;
+    s.beginGroup("radio");
+
+    s.setValue("frequency_khz", freqSpinBox_->value());
+    s.setValue("audio_bw_hz",   audioBwSlider_->value());
+    s.setValue("notch_mode",    notchGroup_->checkedId());
+    s.setValue("notch_var_hz",  notchFreqVSlider_->value());
+    s.setValue("stereo_mode",
+               rbForceStereo_->isChecked() ? "stereo"
+             : rbForceMono_->isChecked()   ? "mono"
+                                           : "auto");
+
+    s.endGroup();
 }
